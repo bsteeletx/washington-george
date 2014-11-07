@@ -1,0 +1,11 @@
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\Pattern.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\Pattern.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\DesignFormat.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\Pec.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\Pes.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\DesignFormat.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\Pec.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\bin\Release\Pes.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Release\Pattern.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Release\Pattern.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Release\Pattern.csprojResolveAssemblyReference.cache

@@ -1,0 +1,5 @@
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\bin\Pro-Debug\DesignFormat.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\bin\Pro-Debug\DesignFormat.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\Pro-Debug\DesignFormat.csprojResolveAssemblyReference.cache
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\Pro-Debug\DesignFormat.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\Pro-Debug\DesignFormat.pdb

@@ -1,0 +1,9 @@
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\bin\Pro-Debug\Pes.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\bin\Pro-Debug\Pes.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\bin\Pro-Debug\DesignFormat.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\bin\Pro-Debug\Pec.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\bin\Pro-Debug\DesignFormat.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\bin\Pro-Debug\Pec.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\obj\Pro-Debug\Pes.csprojResolveAssemblyReference.cache
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\obj\Pro-Debug\Pes.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pes\obj\Pro-Debug\Pes.pdb

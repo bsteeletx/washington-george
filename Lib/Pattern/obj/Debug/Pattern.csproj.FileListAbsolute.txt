@@ -1,0 +1,10 @@
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Temp\Pattern\Any CPU Debug\Pattern.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Temp\Pattern\Any CPU Debug\Pattern.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Debug\Pattern.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Debug\Pattern.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Debug\Pattern.csprojResolveAssemblyReference.cache
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Temp\Pattern\Any CPU Debug\Pattern.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Temp\Pattern\Any CPU Debug\Pattern.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Debug\Pattern.csprojResolveAssemblyReference.cache
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Debug\Pattern.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pattern\obj\Debug\Pattern.pdb

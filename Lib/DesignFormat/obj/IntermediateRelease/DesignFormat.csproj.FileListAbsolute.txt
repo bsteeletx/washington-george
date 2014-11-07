@@ -1,0 +1,9 @@
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\bin\IntermediateRelease\DesignFormat.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\bin\IntermediateRelease\DesignFormat.pdb
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\IntermediateRelease\DesignFormat.dll
+C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\IntermediateRelease\DesignFormat.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\bin\IntermediateRelease\DesignFormat.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\bin\IntermediateRelease\DesignFormat.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\IntermediateRelease\DesignFormat.dll
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\IntermediateRelease\DesignFormat.pdb
+C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\IntermediateRelease\DesignFormat.csprojResolveAssemblyReference.cache

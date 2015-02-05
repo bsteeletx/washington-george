@@ -90,6 +90,8 @@ namespace CombineDesign
 		protected bool IsSideways = false;
 		public int NumOfDesignsInPattern = 1;
 
+		protected float[] AffTransAsFloats = { 0f, 0f, 0f, 0f };
+
 		public DesignFormat()
 		{	
 		}
@@ -728,6 +730,11 @@ namespace CombineDesign
 			return Box.Width;
 		}*/
 
+		public void SetAffineTransform(float[] matrixValues)
+		{
+			AffTransAsFloats = matrixValues;
+		}
+
 		public String GetAffineTransform()
 		{
 			String AffineTransform = "";
@@ -794,6 +801,22 @@ namespace CombineDesign
 
 			while (outText.Length > numOfBytes)
 				//remove last character
+				outText = outText.Remove(outText.Length - 1);
+
+			return outText;
+		}
+
+		public String GetASCII8String(short numOfBytes, float value)
+		{
+			Byte[] tempBytes = { 0x00 };
+			Encoding enc = Encoding.GetEncoding("IBM437");
+
+			tempBytes = BitConverter.GetBytes(value);
+
+			Char[] CharsAsHex = enc.GetChars(tempBytes);
+			String outText = new String(CharsAsHex);
+
+			while (outText.Length > numOfBytes)
 				outText = outText.Remove(outText.Length - 1);
 
 			return outText;
@@ -1081,8 +1104,7 @@ namespace CombineDesign
 			return DesignBreak;
 		}
 
-		public String WriteColorBreak(Stitch Prev, ColorBlock Next, int 
-			FirstRealBlock, bool FirstBlockInDesign = false)
+		public String WriteColorBreak(Stitch Prev, ColorBlock Next, int FirstRealBlock, bool FirstBlockInDesign = false)
 		{
 			String ColorBreak = "";
 			ToggleValue = false;

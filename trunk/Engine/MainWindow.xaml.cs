@@ -78,16 +78,16 @@ namespace CombineDesign
 			buttonMirrorHorizontal.ToolTip += " Not available in Basic version";
 			buttonMirrorVertical.ToolTip += " Not available in Basic version";
 #elif INT
-			buttonRotateLeft.IsEnabled = true;
-			buttonRotateRight.IsEnabled = true;
+			buttonRotateLeft.IsEnabled = false;
+			buttonRotateRight.IsEnabled = false;
 			radioButtonTopLeft.IsEnabled = true;
 			radioButtonTopRight.IsEnabled = true;
 			radioButtonBottomLeft.IsEnabled = true;
 			radioButtonBottomRight.IsEnabled = true;
 			textBoxCellSize.IsEnabled = true;
 			textBoxStickinessAmount.IsEnabled = true;
-			buttonMirrorHorizontal.IsEnabled = true;
-			buttonMirrorVertical.IsEnabled = true;
+			buttonMirrorHorizontal.IsEnabled = false;
+			buttonMirrorVertical.IsEnabled = false;
 #endif
 		}
 
@@ -1116,6 +1116,12 @@ namespace CombineDesign
 					return;
 			}
 
+			Selected.Clear();
+			buttonDelete.IsEnabled = false;
+			buttonMirrorHorizontal.IsEnabled = false;
+			buttonMirrorVertical.IsEnabled = false;
+			buttonRotateLeft.IsEnabled = false;
+			buttonRotateRight.IsEnabled = false;
 			HideBorder();
 		}
 
@@ -1574,6 +1580,8 @@ namespace CombineDesign
 						RotateValues[counter++] %= 360.0f;
 
 					Matrices.Add(I.RenderTransform.Value);
+
+
 
 					
 				}

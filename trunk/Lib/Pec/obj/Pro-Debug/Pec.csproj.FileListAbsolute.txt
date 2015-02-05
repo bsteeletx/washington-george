@@ -1,7 +1,0 @@
-C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pec\bin\Pro-Debug\Pec.dll
-C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pec\bin\Pro-Debug\Pec.pdb
-C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pec\bin\Pro-Debug\DesignFormat.dll
-C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pec\bin\Pro-Debug\DesignFormat.pdb
-C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pec\obj\Pro-Debug\Pec.csprojResolveAssemblyReference.cache
-C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pec\obj\Pro-Debug\Pec.dll
-C:\Users\Rocket\Documents\Projects\PrEmbroiderMe\Lib\Pec\obj\Pro-Debug\Pec.pdb

@@ -1,7 +1,0 @@
-C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Temp\Pec\Any CPU Debug\Pec.dll
-C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Temp\Pec\Any CPU Debug\Pec.pdb
-C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Temp\DesignFormat\Any CPU Debug\DesignFormat.dll
-C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Temp\DesignFormat\Any CPU Debug\DesignFormat.pdb
-C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\Debug\DesignFormat.dll
-C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\Debug\DesignFormat.pdb
-C:\Users\Bobby\Documents\Projects\PrEmbroiderMe\Lib\DesignFormat\obj\Debug\DesignFormat.csprojResolveAssemblyReference.cache

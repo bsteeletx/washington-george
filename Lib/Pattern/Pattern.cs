@@ -142,10 +142,11 @@ namespace CombineDesign
 			Queue<String> CSewSegSection = new Queue<String>();
 			List<String> EncodedPECSection = new List<String>();
 			int LastDesignID = 0;
-			//int counter = 0;
+			int counter = 0;
 
 			foreach (DesignFormat DF in Designs)
 			{
+				DF.SetAffineTransform(MatrixFloats[counter++]);
 				DF.SetHoopWidth((ushort)HoopWidth);
 
 				DF.NumOfDesignsInPattern = ImagePos.Count;
@@ -236,7 +237,7 @@ namespace CombineDesign
 					EncodedPECSection.Add(DF.GetASCII8String(1, 0xFF));
 
 				if (Count == 0)
-					EmbOneHeader += GetEmbOneHeader(PESOffset, HoopWidth,HoopHeight);
+					EmbOneHeader += GetEmbOneHeader(PESOffset, HoopWidth,HoopHeight, MatrixFloats);
 
 				bool lastColorFirstColorSame = false;
 
@@ -1169,15 +1170,15 @@ namespace CombineDesign
 				AllBitmaps.RemoveAt(Count);
 		}
 
-		String GetEmbOneHeader(Point Offset, Int32 HoopWidth, Int32 HoopHeight)
+		String GetEmbOneHeader(Point Offset, Int32 HoopWidth, Int32 HoopHeight, List<float[]> MatrixValues)
 		{
 			String EmbOneHeader = "";
 			MyRect FirstColorBlockBounds = Designs[0].GetFirstColorBlock().GetColorBounds();
 
-			if (Designs[0].GetIsSideways())
-			{
-				Offset.Y += Designs[0].SidewaysOffset;
-			}
+			//if (Designs[0].GetIsSideways())
+			//{
+				//Offset.Y += Designs[0].SidewaysOffset;
+			//}
 
 			int LeftValue = FirstColorBlockBounds.Left + Offset.X;
 			Int32 TopValue = FirstColorBlockBounds.Top + Offset.Y;
@@ -1211,7 +1212,7 @@ namespace CombineDesign
 			EmbOneHeader += Designs[0].GetASCII8String(2, TopValue);
 			EmbOneHeader += Designs[0].GetASCII8String(2, RightValue);
 			EmbOneHeader += Designs[0].GetASCII8String(2, BottomValue);
-			EmbOneHeader += GetAffineTransform(HoopWidth, HoopHeight);//Designs[0].GetAffineTransform();
+			EmbOneHeader += GetAffineTransform(HoopWidth, HoopHeight, MatrixValues);
 			EmbOneHeader += Designs[0].GetASCII8String(2, 1);
 			EmbOneHeader += Designs[0].GetASCII8String(2, LeftValue);
 			EmbOneHeader += Designs[0].GetASCII8String(2, BottomValue);
@@ -1229,7 +1230,7 @@ namespace CombineDesign
 			return EmbOneHeader;
 		}
 
-		String GetAffineTransform(Int32 HoopWidth, Int32 HoopHeight)
+		String GetAffineTransform(Int32 HoopWidth, Int32 HoopHeight, List<float[]> MatrixValues)
 		{
 			String AffineTransform = "";
 
@@ -1237,16 +1238,22 @@ namespace CombineDesign
 			//UPDATE: Different if saved by Embird vs. Brother, going with Brother
 			if (HoopWidth <= HoopHeight)
 			{
-				AffineTransform += Designs[0].GetASCII8String(2, 0);
-				AffineTransform += Designs[0].GetASCII8String(2,
-					16256); //0x3F80
-				AffineTransform += Designs[0].GetASCII8String(2, 0);
+				/*AffineTransform += Designs[0].GetASCII8String(2, 0);
+				AffineTransform += Designs[0].GetASCII8String(2, 16256); //0x3F80
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
-				AffineTransform += Designs[0].GetASCII8String(2,
-					16256); //0x3F80
+				AffineTransform += Designs[0].GetASCII8String(2, 0);
+				AffineTransform += Designs[0].GetASCII8String(2, 16256); //0x3F80
+				AffineTransform += Designs[0].GetASCII8String(2, 0);
+				AffineTransform += Designs[0].GetASCII8String(2, 0);
+				AffineTransform += Designs[0].GetASCII8String(2, 0);
+				AffineTransform += Designs[0].GetASCII8String(2, 0);*/
+
+				for (int i = 0; i < 4; i++)
+					AffineTransform += Designs[0].GetASCII8String(4, MatrixValues[0][i]);
+
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
@@ -1255,21 +1262,16 @@ namespace CombineDesign
 			else //might need more here, this should work for 7x5 though
 			{
 				AffineTransform += Designs[0].GetASCII8String(2, 2886); //0x0B46
-				AffineTransform += Designs[0].GetASCII8String(2,
-					12881); //0x3251
+				AffineTransform += Designs[0].GetASCII8String(2, 12881); //0x3251
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
-				AffineTransform += Designs[0].GetASCII8String(2, 
-					16256); //0x3F80
+				AffineTransform += Designs[0].GetASCII8String(2, 16256); //0x3F80
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
-				AffineTransform += Designs[0].GetASCII8String(2, 
-					-16512); //0xBF80
+				AffineTransform += Designs[0].GetASCII8String(2, -16512); //0xBF80
 				/////////////////Split//////////////////////
 				AffineTransform += Designs[0].GetASCII8String(2, 2886); //0x0B46
-				AffineTransform += Designs[0].GetASCII8String(2,
-					12881); //0x3251
+				AffineTransform += Designs[0].GetASCII8String(2, 12881); //0x3251
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
-				AffineTransform += Designs[0].GetASCII8String(2, 
-					17658); //0x44FA
+				AffineTransform += Designs[0].GetASCII8String(2, 17658); //0x44FA
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
 				AffineTransform += Designs[0].GetASCII8String(2, 0);
 			}

@@ -161,8 +161,8 @@ namespace CombineDesign
 						return;
 
 					_filenames.Add(Filename);
-					RotateValues.Add(0.0f);
-					_scaleValues.Add(new Point(1, 1));
+					//RotateValues.Add(0.0f);
+					//_scaleValues.Add(new Point(1, 1));
 				}
 
 				UserLogic.UserSettings.LastOpenDir = System.IO.Path.GetDirectoryName(OFD.FileNames[0]);
@@ -217,7 +217,9 @@ namespace CombineDesign
 				Designs.Add(I);
 
 				_SetImagePosition(I, new Point(0.0, 0.0), Designs.Count - 1);
-				
+				_scaleValues.Add(new Point(1.0, 1.0));
+				RotateValues.Add(0.0f);
+								
 				if (AdjustHoopSize(I))
 					canvasDrawingArea.Children.Add(I);
 				else
@@ -230,8 +232,8 @@ namespace CombineDesign
 					List<Image> LI = new List<Image>();
 					LI.Add(I);
 					RemoveOneDesign(LI);
-					//RotateValues.RemoveAt(RotateValues.Count - 1);
-					//_scaleValues.RemoveAt(_scaleValues.Count - 1);
+					RotateValues.RemoveAt(RotateValues.Count - 1);
+					_scaleValues.RemoveAt(_scaleValues.Count - 1);
 					break;
 				}
 			}
@@ -1060,7 +1062,7 @@ namespace CombineDesign
 			Point Test = RT.Transform(PreRotate);
 
 			return Test;
-		}
+		} 
 
 		void SetImageX(Image I, double x, int ID)
 		{
@@ -1135,7 +1137,7 @@ namespace CombineDesign
 
 			Point Center = new Point((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
 			RotateTransform RT = new RotateTransform(currentRotate);
-
+			
 			Point topLeft = RT.Transform(new Point(bounds.TopLeft.X - Center.X, bounds.TopLeft.Y - Center.Y));
 			Point topRight = RT.Transform(new Point(bounds.TopRight.X - Center.X, bounds.TopRight.Y - Center.Y));
 			Point bottomLeft = RT.Transform(new Point(bounds.BottomLeft.X - Center.X, bounds.BottomLeft.Y - Center.Y));

@@ -90,7 +90,7 @@ namespace CombineDesign
 		protected bool IsSideways = false;
 		public int NumOfDesignsInPattern = 1;
 
-		protected float[] AffTransAsFloats = { 0f, 0f, 0f, 0f };
+		//protected float[] AffTransAsFloats = { 0f, 0f, 0f, 0f };
 
 		public DesignFormat()
 		{	
@@ -730,11 +730,6 @@ namespace CombineDesign
 			return Box.Width;
 		}*/
 
-		public void SetAffineTransform(float[] matrixValues)
-		{
-			AffTransAsFloats = matrixValues;
-		}
-
 		public String GetAffineTransform()
 		{
 			String AffineTransform = "";
@@ -1078,6 +1073,7 @@ namespace CombineDesign
 		{
 			String DesignBreak = "";
 			int FirstBlock = Next.GetFirstRealBlockNumber();
+			//What to do if FirstBlock returns -1? FREAK OUT:?!?
 			int StitchTotal = Next.GetStitchBlocks()[FirstBlock].GetStitchTotal();
 			
 			if (Last != null)
@@ -1113,8 +1109,16 @@ namespace CombineDesign
 			Stitch NextStitch = Next.GetFirstFlaglessStitch();
 			short NumberOfStitchesInNext = -1;
 
-			NumberOfStitchesInNext = (short)(Next.GetStitchBlocks()
-					[FirstRealBlock].GetStitchTotal() - 1);
+			if (FirstRealBlock != -1)
+				NumberOfStitchesInNext = (short)(Next.GetStitchBlocks()[FirstRealBlock].GetStitchTotal() - 1);
+			else
+			{
+				NumberOfBreaksInNext = 1;
+				NextStitch = Next.GetStitchBlocks()[0].GetStitchList()[0];
+				Stitch LastStitch = Next.GetLastStitchInColorBlock();
+				NextBoundingBox = new MyRect(Math.Min(NextStitch.XX, LastStitch.XX), Math.Min(NextStitch.YY, LastStitch.YY), Math.Max(NextStitch.XX, LastStitch.XX), Math.Max(NextStitch.YY, LastStitch.YY));
+				NumberOfStitchesInNext = 1;
+			}
 
 			ColorBreak += GetASCII8String(4, 1);
 			ColorBreak += GetASCII8String(2, Prev.ThreadSelection.ColorInIndex);
@@ -1125,26 +1129,20 @@ namespace CombineDesign
 
 			for (int i = 0; i < 2; i++)
 			{
-				ColorBreak += GetASCII8String(2, NextBoundingBox.Left +
-					SaveOffset.X);
-				ColorBreak += GetASCII8String(2, NextBoundingBox.Top +
-					SaveOffset.Y);
-				ColorBreak += GetASCII8String(2, NextBoundingBox.Right +
-					SaveOffset.X);
-				ColorBreak += GetASCII8String(2, NextBoundingBox.Bottom +
-					SaveOffset.Y);
+				ColorBreak += GetASCII8String(2, NextBoundingBox.Left + SaveOffset.X);
+				ColorBreak += GetASCII8String(2, NextBoundingBox.Top + SaveOffset.Y);
+				ColorBreak += GetASCII8String(2, NextBoundingBox.Right + SaveOffset.X);
+				ColorBreak += GetASCII8String(2, NextBoundingBox.Bottom + SaveOffset.Y);
 			}
 
 			ColorBreak += GetAffineTransform();
 			ColorBreak += GetASCII8String(2, 1);
 
-			ColorBreak += GetASCII8String(2, NextBoundingBox.Left + 
-				SaveOffset.X);
-			ColorBreak += GetASCII8String(2, NextBoundingBox.Bottom + 
-				SaveOffset.Y);
+			ColorBreak += GetASCII8String(2, NextBoundingBox.Left + SaveOffset.X);
+			ColorBreak += GetASCII8String(2, NextBoundingBox.Bottom + SaveOffset.Y);
 			ColorBreak += GetASCII8String(2, NextBoundingBox.Width);
 			ColorBreak += GetASCII8String(2, NextBoundingBox.Height);
-
+			
 			ColorBreak += GetASCII8String(8, 0);
 
 			if (FirstBlockInDesign)
@@ -1157,13 +1155,16 @@ namespace CombineDesign
 				NumberOfBreaksInNext *= 2;
 				NumberOfBreaksInNext += 3;
 			}
-			
-			ColorBreak += GetASCII8String(2, NumberOfBreaksInNext);
+
+			if (FirstRealBlock != -1)
+				ColorBreak += GetASCII8String(2, NumberOfBreaksInNext);
+			else 
+				//total hack here. Not sure what you're supposed to do with a color block with no real stitches
+				ColorBreak += GetASCII8String(2, 1);
 
 			if (!FirstBlockInDesign)
 			{
-				ColorBreak += WriteSectionBreak(Prev, NextStitch,
-					NumberOfStitchesInNext, true, false);
+				ColorBreak += WriteSectionBreak(Prev, NextStitch, NumberOfStitchesInNext, true, false);
 			}
 			
 			return ColorBreak;
@@ -1189,9 +1190,12 @@ namespace CombineDesign
 			String SectionBreak = "";
 			short ColorValue = (short)Next.ThreadSelection.ColorInIndex;
 
+			if (ActualStitchTotal == 1)
+				ColorValue = 0x20;
+
 			if (!firstBlock)
 			{
-				if (Orig)
+				if (Orig && ActualStitchTotal > 1)
 				{
 					if (!toggle)
 					{
@@ -1225,6 +1229,10 @@ namespace CombineDesign
 				SectionBreak += GetASCII8String(2, Last.YY + SaveOffset.Y);
 				SectionBreak += GetASCII8String(2, Next.XX + SaveOffset.X);
 				SectionBreak += GetASCII8String(2, Next.YY + SaveOffset.Y);
+			}
+			else if (ActualStitchTotal == 1)
+			{
+
 			}
 
 			return SectionBreak;
@@ -2682,42 +2690,58 @@ namespace CombineDesign
 			Bottom = newHeight;
 		}
 
-		public void Rotate(float degrees)
+		public void Rotate(float[] matrix)
 		{
-			Point TempCenter = Center;
-			int tempLeft = Left - Center.X;
-			int tempTop = Top - Center.Y;
-			int tempRight = Right - Center.X;
-			int tempBottom = Bottom - Center.Y;
-			Point[] NewPoints = new Point[4];
-			int xValue = 0;
-			int yValue = 0;
-			int minX = 32767;
-			int maxX = -32767;
-			int minY = 32767;
-			int maxY = -32767;
+			Point[] RecPoints = { new Point(_left, _top), new Point(_right, _top), new Point(_left, _bottom), new Point(_right, _bottom) };
+			Point[] RecPointsPrime = { new Point(), new Point(), new Point(), new Point() };
 
-			NewPoints[0] = new Point(tempLeft, tempTop);
-			NewPoints[1] = new Point(tempRight, tempTop);
-			NewPoints[2] = new Point(tempLeft, tempBottom);
-			NewPoints[3] = new Point(tempRight, tempBottom);
-
-			for (int i = 0; i < 4; i++)
+			for(int i = 0; i < 4; i++)
 			{
-				xValue = (int)((NewPoints[i].X * Math.Cos(ToRadians(degrees))) - (NewPoints[i].Y * Math.Sin(ToRadians(degrees))));
-				yValue = (int)((NewPoints[i].X * Math.Sin(ToRadians(degrees))) + (NewPoints[i].Y * Math.Cos(ToRadians(degrees))));
-				xValue += TempCenter.X;
-				yValue += TempCenter.Y;
-				minX = Math.Min(xValue, minX);
-				minY = Math.Min(yValue, minY);
-				maxX = Math.Max(xValue, maxX);
-				maxY = Math.Max(yValue, maxY);
+				RecPoints[i].X -= Center.X;
+				RecPoints[i].Y -= Center.Y;
+
+				RecPointsPrime[i].X = (RecPoints[i].X * (int)matrix[0] + (RecPoints[i].Y * (int)matrix[2]));
+				RecPointsPrime[i].Y = (RecPoints[i].X * (int)matrix[1] + (RecPoints[i].Y * (int)matrix[3]));
+
+				RecPointsPrime[i].X += Center.X;
+				RecPointsPrime[i].Y += Center.Y;
 			}
 
-			Left = minX;
-			Top = minY;
-			Right = maxX;
-			Bottom = maxY;
+			_left = Math.Min(RecPointsPrime[0].X, Math.Min(RecPointsPrime[1].X, Math.Min(RecPointsPrime[2].X, RecPointsPrime[3].X)));
+			_top = Math.Min(RecPointsPrime[0].Y, Math.Min(RecPointsPrime[1].Y, Math.Min(RecPointsPrime[2].Y, RecPointsPrime[3].Y)));
+			_right = Math.Max(RecPointsPrime[0].X, Math.Max(RecPointsPrime[1].X, Math.Max(RecPointsPrime[2].X, RecPointsPrime[3].X)));
+			_bottom = Math.Max(RecPointsPrime[0].Y, Math.Max(RecPointsPrime[1].Y, Math.Max(RecPointsPrime[2].Y, RecPointsPrime[3].Y)));
+
+			if (_left < 0)
+			{
+				int temp = _left;
+				_left += -temp;
+				_right += -temp;
+			}
+			if (_top < 0)
+			{
+				int temp = _top;
+				_top += -temp;
+				_bottom += temp;
+			}
+
+			SetWidth();
+			SetHeight();
+
+			/*int left = _left - Center.X;
+			int top = _top - Center.Y;
+			int bottom = _bottom - Center.Y;
+			int right = _right - Center.X;
+
+			left = (left * (int)matrix[0]) + (left * (int)matrix[2]) + Center.X;
+			top = (top * (int)matrix[1]) + (top * (int)matrix[3]) + Center.Y;
+			bottom = (bottom * (int)matrix[1]) + (bottom * (int)matrix[3]) + Center.Y;
+			right = (right * (int)matrix[0]) + (right * (int)matrix[2]) + Center.X;
+
+			_left = Math.Min(left, right);
+			_top = Math.Min(top, bottom);
+			_bottom = Math.Max(top, bottom);
+			_right = Math.Max(left, right);										   */
 		}
 
 		private double ToRadians(float degrees)
@@ -2990,6 +3014,7 @@ namespace CombineDesign
 		public int GetFirstRealBlockNumber()
 		{
 			int BlockNumber = 0;
+			int BlockCount = GetStitchBlocks().Count;
 
 			foreach (StitchBlock SB in GetStitchBlocks())
 			{
@@ -3001,6 +3026,9 @@ namespace CombineDesign
 
 				break;
 			}
+
+			if (BlockCount == BlockNumber)
+				return -1;
 
 			return BlockNumber;
 		}

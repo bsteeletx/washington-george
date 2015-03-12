@@ -11,7 +11,7 @@ namespace CombineDesign
 		public const int threadCount = 65;
 		public static List<Thread> pecThreadLibrary = new List<Thread>();
 		public Int64 graphicsOffsetLocation, graphicsOffsetValue = 0;
-		public float[] AffineTransform = { 0.0f, 0.0f, 0.0f, 0.0f };
+		public float[,] AffineTransform = new float[2,2] {{ 0.0f, 0.0f}, {0.0f, 0.0f }};
 		short _pecSidewaysOffset = 0;
 
 		public Thread getThreadInList(Int16 threadID)

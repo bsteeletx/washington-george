@@ -129,9 +129,12 @@ namespace CombineDesign
 				case 6: fileIn.BaseStream.Position = 0x3A; break;
 				case 9: fileIn.BaseStream.Position = 0x43; break;
 			}
-			
-			for (int i = 0; i < 4; i++)
-				AffineTransform[i] = fileIn.ReadSingle();
+
+			for (int i = 0; i < 2; i++)
+			{
+				for (int j = 0; j < 2; j++ )
+					AffineTransform[i,j] = fileIn.ReadSingle();
+			}
 
 			if (Version >= 6.0f)
 			{
@@ -202,10 +205,22 @@ namespace CombineDesign
 			int LastRealBlockNumber = 0;
 			Stitch NextStitch = CB.GetFirstFlaglessStitch();
 
+			//if everything is broken, write away!
+			if (NextStitch == null)
+			{
+				jumps = 0;
+				FirstRealBlockNumber = 0;
+				LastRealBlockNumber = 0;
+				NextStitch = CB.GetStitchBlocks()[0].GetStitchList()[0];
+			}
+
 			//if it's a new design, we already wrote the break
 			if (CB != BlocksInDesignByColor[0])
 			{
-				ColorBlockSection += WriteColorBreak(LastStitch, CB, FirstRealBlockNumber);
+				if (CB.GetFirstFlaglessStitch() != null)
+					ColorBlockSection += WriteColorBreak(LastStitch, CB, FirstRealBlockNumber);
+				else
+					ColorBlockSection += WriteColorBreak(LastStitch, CB, -1);
 			}
 
 			for (int i = LSB.Count - 1; i > -1; i--)
@@ -219,12 +234,23 @@ namespace CombineDesign
 
 			for (int i = FirstRealBlockNumber; i < LSB.Count; i++)
 			{
-				if (LSB[i].GetStitchTotalMinusFlags() < 1)
-					continue;
-				
-				foreach (Stitch S in LSB[i].GetStitchList())
+				if (CB.GetFirstFlaglessStitch() != null)
 				{
-					if (S.Flags == DesignFormat.NORMAL)
+					if (LSB[i].GetStitchTotalMinusFlags() < 1)
+						continue;
+
+					foreach (Stitch S in LSB[i].GetStitchList())
+					{
+						if (S.Flags == DesignFormat.NORMAL)
+						{
+							NextStitch = S;
+							break;
+						}
+					}
+				}
+				else //for weird design that has a new color block but no "real" stitches
+				{
+					foreach (Stitch S in LSB[i].GetStitchList())
 					{
 						NextStitch = S;
 						break;
@@ -237,6 +263,9 @@ namespace CombineDesign
 				ColorBlockSection += GetSewSegStitchBlock(LSB[i], LastStitch, FirstRealBlockNumber - i);
 				
 				LastStitch = LSB[LastRealBlockNumber].GetLastRealStitch();
+
+				if (LastStitch == null)
+					LastStitch = LSB[LastRealBlockNumber].GetLastStitch();
 			}
 
 			return ColorBlockSection;
@@ -367,8 +396,7 @@ namespace CombineDesign
 			}
 		}
 
-		public override String GetSewSegSection(Point Offset, Stitch LastStitch 
-			= null)
+		public override String GetSewSegSection(Point Offset, Stitch LastStitch	= null)
 		{
 			String SewSegSection = "";
 			
@@ -376,12 +404,26 @@ namespace CombineDesign
 											
 			foreach (ColorBlock CB in BlocksInDesignByColor)
 			{
+				if (CB.GetFirstRealBlockNumber() == -1)
+				{
+					Stitch TestStitch = CB.GetLastStitchInColorBlock();
+
+					if (TestStitch.Flags != DesignFormat.END)
+						continue;
+				}
+
 				if (CB != BlocksInDesignByColor[0] || LastStitch != null)
 					SewSegSection += GetSewSegColorBlock(CB, (short)LastStitch.ThreadSelection.ColorInIndex, LastStitch);
 				else
 					SewSegSection += GetSewSegColorBlock(CB, -1, LastStitch);
 				
 				LastStitch = CB.GetLastRealStitchInColorBlock();
+
+				if (LastStitch == null)
+				{
+					if (CB.GetLastStitchInColorBlock().Flags == DesignFormat.END)
+						LastStitch = CB.GetLastStitchInColorBlock();
+				}
 			}
 
 			return SewSegSection;

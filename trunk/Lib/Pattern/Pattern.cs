@@ -125,6 +125,16 @@ namespace CombineDesign
 
 			return OneBitmap;
 		}*/
+		private void ApplyAffineTransform(List<float[]> AffTrans, List<MyRect> ImageBounds)
+		{
+			foreach (float[] fa in AffTrans)
+			{
+				foreach (MyRect MR in ImageBounds)
+				{
+					MR.Rotate(fa);
+				}
+			}
+		}
 
 		public void saveAsPes(String Filename, Int16 HoopWidth, Int16 HoopHeight, List<MyRect> ImagePos, float ZoomLevel, List<float[]> MatrixFloats)//List<Point> ScaleInfo, List<float> RotationInfo)
 		{
@@ -146,7 +156,6 @@ namespace CombineDesign
 
 			foreach (DesignFormat DF in Designs)
 			{
-				DF.SetAffineTransform(MatrixFloats[counter++]);
 				DF.SetHoopWidth((ushort)HoopWidth);
 
 				DF.NumOfDesignsInPattern = ImagePos.Count;
@@ -156,50 +165,13 @@ namespace CombineDesign
 				if (DF.GetIsSideways())
 					DF.SetSideways270Offset();
 #if !BASIC
-				/*//check for rotations
-				if (Rotations.Count == RotationInfo.Count)
-				{
-					if (RotationInfo[counter] != Rotations[counter])
-					{
-						DF.Rotate(RotationInfo[counter], ImagePos[counter], ZoomLevel, HoopWidth);
-						Rotations[counter] = RotationInfo[counter];
-						//RotateOffset(counter);
-					}
-				}
-				else
-				{
-					DF.Rotate(RotationInfo[counter], ImagePos[counter], ZoomLevel, HoopWidth);
-					Rotations.Add(RotationInfo[counter]);
-					//RotateOffset(counter);
-				}
-				
-				//check for flips
-				if (Scales.Count == ScaleInfo.Count)
-				{
-					if (Scales[counter] != ScaleInfo[counter])
-					{
-						Point Temp = new Point(1, 1);
-
-						if (Scales[counter].X != ScaleInfo[counter].X)
-							Temp.X *= -1;
-						if (Scales[counter].Y != ScaleInfo[counter].Y)
-							Temp.Y *= -1;
-
-						DF.Scale(Temp);
-						Scales[counter] = ScaleInfo[counter++];
-					}
-				}
-				else
-				{
-					if (ScaleInfo[counter] != new Point(1, 1))
-						DF.Scale(ScaleInfo[counter]);
-
-					Scales.Add(ScaleInfo[counter++]);
-				} */
+				//Apply Transform to everything:
+				//ImagePos, 
+				ApplyAffineTransform(MatrixFloats, ImagePos);	//Apply Matrix to each colorblock (and stitchblock?) to change width/height
 #endif
 			}
 
-			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, ZoomLevel);
+			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, ZoomLevel);   //Add Matrix to call, apply Matrix before returning
 			PesHoopSizeFormat = GetPesHoopSizeFormat(HoopWidth, HoopHeight);
 
 			//for (int i = 0; i < ImagePos.Count; i++)

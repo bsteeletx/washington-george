@@ -165,13 +165,16 @@ namespace CombineDesign
 				if (DF.GetIsSideways())
 					DF.SetSideways270Offset();
 #if !BASIC
-				//Apply Transform to everything:
-				//ImagePos, 
+										
+				//Apply Transform to everything
 				ApplyAffineTransform(MatrixFloats, ImagePos);	//Apply Matrix to each colorblock (and stitchblock?) to change width/height
+
+				foreach (ColorBlock CB in DF.BlocksInDesignByColor)
+					CB.BoundsUpdated();
 #endif
 			}
 
-			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, ZoomLevel);   //Add Matrix to call, apply Matrix before returning
+			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, ZoomLevel, MatrixFloats);   
 			PesHoopSizeFormat = GetPesHoopSizeFormat(HoopWidth, HoopHeight);
 
 			//for (int i = 0; i < ImagePos.Count; i++)
@@ -182,7 +185,7 @@ namespace CombineDesign
 			bool stopCodeForPEC = true;
 			Point LastOffset = new Point();
 			Point CenterPoint = new Point();
-			MyRect AllBounds = GetAllBounds(ImagePos, ZoomLevel);
+			MyRect AllBounds = GetAllBounds(ImagePos, ZoomLevel, MatrixFloats);
 			CenterPoint.X = AllBounds.Left;
 			CenterPoint.Y = AllBounds.Top;
 
@@ -283,8 +286,7 @@ namespace CombineDesign
 			Int32 GraphicsOffsetLocation = PECStitchLength + 16; //16 for the				following 16 Bytes
 
 			//finishing stitch section
-			EncodedPECHeader += GetPECStitchHeader(GraphicsOffsetLocation, 
-				HoopWidth, HoopHeight, ZoomLevel, ImagePos);
+			EncodedPECHeader += GetPECStitchHeader(GraphicsOffsetLocation, HoopWidth, HoopHeight, ZoomLevel, ImagePos, MatrixFloats);
 			
 			PesOutFile = PesFrame + EmbOneHeader + CSewSegHeader;
 
@@ -332,7 +334,7 @@ namespace CombineDesign
 			return footer;
 		}
 
-		string GetPECStitchHeader(int graphicsOffset, int HoopWidth, int HoopHeight, float ZoomLevel, List<MyRect> ImagePos)
+		string GetPECStitchHeader(int graphicsOffset, int HoopWidth, int HoopHeight, float ZoomLevel, List<MyRect> ImagePos, List<float[]> MatrixFloats)
 		{
 			string header = "";
 
@@ -342,19 +344,17 @@ namespace CombineDesign
 			header += Designs[0].GetASCII8String(1, 0xFF);
 			header += Designs[0].GetASCII8String(1, 0xF0);
 
+			MyRect AllBounds = GetAllBounds(ImagePos, ZoomLevel, MatrixFloats);
+
 			if (HoopWidth <= HoopHeight)
 			{
-				header += Designs[0].GetASCII8String(2, GetAllBounds
-					(ImagePos, ZoomLevel).Width);
-				header += Designs[0].GetASCII8String(2, GetAllBounds
-					(ImagePos, ZoomLevel).Height);
+				header += Designs[0].GetASCII8String(2, AllBounds.Width);
+				header += Designs[0].GetASCII8String(2, AllBounds.Height);
 			}
 			else
 			{
-				header += Designs[0].GetASCII8String(2, GetAllBounds
-					(ImagePos, ZoomLevel).Height);
-				header += Designs[0].GetASCII8String(2, GetAllBounds
-					(ImagePos, ZoomLevel).Width);
+				header += Designs[0].GetASCII8String(2, AllBounds.Height);
+				header += Designs[0].GetASCII8String(2, AllBounds.Width);
 			}
 
 			header += Designs[0].GetASCII8String(2, 0x1E0);
@@ -854,7 +854,7 @@ namespace CombineDesign
 			return 0;
 		}
 
-		MyRect GetAllBounds(List<MyRect> ImagePos, float ZoomLevel)
+		MyRect GetAllBounds(List<MyRect> ImagePos, float ZoomLevel, List<float[]> MatrixFloats)
 		{
 			List<MyRect> ImageValues = new List<MyRect>();
 
@@ -866,6 +866,7 @@ namespace CombineDesign
 			}
 			
 			MyRect FirstBounds = new MyRect(Designs[0].GetBoundsOfDesign());
+			FirstBounds.Rotate(MatrixFloats[0]);
 			int counter = 1;
 			Int32 LeftValue = ImageValues[0].Left + FirstBounds.Left;
 			Int32 RightValue = ImageValues[0].Left + FirstBounds.Right;
@@ -890,8 +891,7 @@ namespace CombineDesign
 				LeftValue = Math.Min(LeftValue, Test.Left + ImageLoc.Left);
 				RightValue = Math.Max(RightValue, Test.Right + ImageLoc.Left);
 				TopValue = Math.Min(TopValue, Test.Top + ImageLoc.Top);
-				BottomValue = Math.Max(BottomValue, Test.Bottom + 
-					ImageLoc.Top);
+				BottomValue = Math.Max(BottomValue, Test.Bottom + ImageLoc.Top);
 
 			}
 
@@ -1055,53 +1055,82 @@ namespace CombineDesign
 			return new MyRect(left, top, right, bottom);
 		}
 
-		void GetOffsetAmount(List<MyRect> ImageBoxes, Int32 HoopWidth, Int32 HoopHeight, float zoomValue)//, List<float>RotateValues)
+		Point MultiplyPointByMatrix(Point P, float[] matrix)
+		{
+			Point ReturnPoint = new Point();
+
+			ReturnPoint.X = (int)((P.X * matrix[0]) + (P.Y * matrix[2]));
+			ReturnPoint.Y = (int)((P.X * matrix[1]) + (P.Y * matrix[3]));
+
+			return ReturnPoint;
+		}
+
+		void GetOffsetAmount(List<MyRect> ImageBoxes, Int32 HoopWidth, Int32 HoopHeight, float zoomValue, List<float[]> MatrixValues)//, List<float>RotateValues)
 		{
 			Int32 YOffset = 0;
 			Int32 XOffset = 0;
 			Queue<Int32> ImageXOffsets = new Queue<int>();
 			Queue<Int32> ImageYOffsets = new Queue<int>();
-			List<MyRect> TempRects = new List<MyRect>();
-			//int count = 0;
-
+			Queue<int> ImageWidths = new Queue<int>();
+			Queue<int> ImageHeights = new Queue<int>();
+			Queue<Point> TransformedPoint = new Queue<Point>();
+			int counter = 0;
+			
 			foreach (MyRect R in ImageBoxes)
 			{
 				//MyRect UpdatedR = RotateBounds(RotateValues[count++], R, HoopWidth);
 				ImageXOffsets.Enqueue((int)(R.Left / zoomValue));
 				ImageYOffsets.Enqueue((int)(R.Top / zoomValue));
-			}
-
-			///General Offset applied to all
-			switch (HoopWidth)
-			{
-				case 4:
-					XOffset = YOffset = 0x1F4; //was x1F4..?
-					break;
-				case 5:
-					XOffset = 0x15E;
-					YOffset = 0x64; 
-					break;
-				case 7:
-					XOffset = 0x64;
-					YOffset = 0x15E;
-					break;
+				ImageWidths.Enqueue((int)((R.Right / zoomValue) - (R.Left / zoomValue)));
+				ImageHeights.Enqueue((int)((R.Bottom / zoomValue) - (R.Top / zoomValue)));
+			
+				///General Offset applied to all
+				switch (HoopWidth)
+				{
+					case 4:
+						TransformedPoint.Enqueue(MultiplyPointByMatrix(new Point(0x1F4, 0x1F4), MatrixValues[counter++]));
+						break;
+					case 5:
+						TransformedPoint.Enqueue(MultiplyPointByMatrix(new Point(0x15E, 0x64), MatrixValues[counter++]));
+						break;
+					case 7:
+						TransformedPoint.Enqueue(MultiplyPointByMatrix(new Point(0x64, 0x15E), MatrixValues[counter++]));
+						break;
+				}
 			}
 
 			foreach (DesignFormat DF in Designs)
 			{
-				//THIS WORKS, JUST TRYING SOMETHING ELSE!
 				int ImageXOffset = ImageXOffsets.Dequeue();
 				int ImageYOffset = ImageYOffsets.Dequeue();
-				//int DesignLeftValue = DF.GetBoundsOfDesign().Left;
-				//int DesignTopValue = DF.GetBoundsOfDesign().Top;
-				int NewOffsetAmountX = ImageXOffset + XOffset;
-				int NewOffsetAmountY = ImageYOffset + YOffset;
+				int NewOffsetAmountX = 0;//ImageXOffset + XOffset;
+				int NewOffsetAmountY = 0;// ImageYOffset + YOffset;
+				Point TPoint = TransformedPoint.Dequeue();
+				int Width = ImageWidths.Dequeue();
+				int Height = ImageHeights.Dequeue();
+
+				if (TPoint.X < 0 && TPoint.Y > 0)
+				{
+					NewOffsetAmountY = TPoint.X - Height - ImageXOffset;
+					NewOffsetAmountX = ImageYOffset + TPoint.Y;
+				}
+				else if (TPoint.Y < 0 && TPoint.X > 0)
+				{
+					NewOffsetAmountX = TPoint.Y - Width - ImageYOffset;
+					NewOffsetAmountY = ImageXOffset + TPoint.X;
+				}
+				else if (TPoint.X < 0 || TPoint.Y < 0)
+				{
+					NewOffsetAmountY = TPoint.X - Height - ImageYOffset;
+					NewOffsetAmountX = TPoint.Y - Width - ImageXOffset;
+				}
+				else
+				{
+					NewOffsetAmountX = ImageXOffset + TPoint.X;
+					NewOffsetAmountY = ImageYOffset + TPoint.Y;
+				}
+				
 				Point NewOffset = new Point(NewOffsetAmountX, NewOffsetAmountY);
-
-				/*MyRect Bounds = DF.GetBoundsOfDesign();
-
-				Point NewOffset = new Point(ImageXOffsets.Dequeue()
-					- Bounds.Left, ImageYOffsets.Dequeue() - Bounds.Top); */
 
 				OffsetAmount.Add(NewOffset);
 			}
@@ -1146,6 +1175,7 @@ namespace CombineDesign
 		{
 			String EmbOneHeader = "";
 			MyRect FirstColorBlockBounds = Designs[0].GetFirstColorBlock().GetColorBounds();
+			FirstColorBlockBounds.Rotate(MatrixValues[0]);
 
 			//if (Designs[0].GetIsSideways())
 			//{

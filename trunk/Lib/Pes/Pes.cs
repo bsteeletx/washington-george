@@ -349,6 +349,8 @@ namespace CombineDesign
 
 			Point MoveOffset = new Point(0, 0);
 
+			//TODO: Uncomment this out once done testing
+			/*
 			if (S.XX + Offset.X < minX)
 			{
 				//exceptionThrown = true;
@@ -373,7 +375,7 @@ namespace CombineDesign
 				MoveOffset.Y += maxY - (S.YY + Offset.Y);
 				//exceptionThrown = true;
 				error = Y_TOO_BIG;
-			}
+			} */
 
 			if (exceptionThrown)
 				throw new Exception(error);

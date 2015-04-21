@@ -720,6 +720,9 @@ namespace CombineDesign
 
 		public void SetSaveOffset(Point NewOffset)
 		{
+			//Seeing if it's a perfect 500 when sideways...below it is the original working code
+			//SaveOffset.X = NewOffset.X;
+			//SaveOffset.Y = NewOffset.Y - 500;
 			SaveOffset = NewOffset;
 		}
 
@@ -754,14 +757,11 @@ namespace CombineDesign
 			else //might need more here, this should work for 7x5 though
 			{
 				AffineTransform += GetASCII8String(2, 2886); //0x0B46
-				AffineTransform += GetASCII8String(2,
-					12881); //0x3251
+				AffineTransform += GetASCII8String(2, 12881); //0x3251
 				AffineTransform += GetASCII8String(2, 0);
-				AffineTransform += GetASCII8String(2,
-					16256); //0x3F80
+				AffineTransform += GetASCII8String(2, 16256); //0x3F80
 				AffineTransform += GetASCII8String(2, 0);
-				AffineTransform += GetASCII8String(2,
-					-16512); //0xBF80
+				AffineTransform += GetASCII8String(2, -16512); //0xBF80
 				/////////////////Split//////////////////////
 				AffineTransform += GetASCII8String(2, 2886); //0x0B46
 				AffineTransform += GetASCII8String(2,
@@ -2694,6 +2694,7 @@ namespace CombineDesign
 		{
 			Point[] RecPoints = { new Point(_left, _top), new Point(_right, _top), new Point(_left, _bottom), new Point(_right, _bottom) };
 			Point[] RecPointsPrime = { new Point(), new Point(), new Point(), new Point() };
+			Point TopLeftCorner = new Point(_left, _top);
 
 			for(int i = 0; i < 4; i++)
 			{
@@ -2724,6 +2725,28 @@ namespace CombineDesign
 				_top += -temp;
 				_bottom += temp;
 			}
+
+			//I try to keep the top left corner in the same location after rotation
+			/*if (TopLeftCorner.X < _left)
+			{
+				_right -= TopLeftCorner.X;
+				_left = TopLeftCorner.X;
+			}
+			else if (TopLeftCorner.X > _left)
+			{
+				_right += TopLeftCorner.X;
+				_left = TopLeftCorner.X;
+			}
+			if (TopLeftCorner.Y < _top)
+			{ 
+				_bottom -= TopLeftCorner.Y;
+				_top = TopLeftCorner.Y;
+			}
+			else if (TopLeftCorner.Y > _top)
+			{
+				_bottom += TopLeftCorner.Y;
+				_top = TopLeftCorner.Y;
+			} *///not needed
 
 			SetWidth();
 			SetHeight();

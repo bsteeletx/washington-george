@@ -57,10 +57,10 @@ namespace CombineDesign
 			{
 				float[] f4 = new float[4];
 
-				f4[0] = (float)M.M11;
-				f4[1] = (float)M.M12;
-				f4[2] = (float)M.M21;
-				f4[3] = (float)M.M22;
+				f4[0] = (float)Math.Round(M.M11, 6);
+				f4[1] = (float)Math.Round(M.M12, 6);
+				f4[2] = (float)Math.Round(M.M21, 6);
+				f4[3] = (float)Math.Round(M.M22, 6);
 
 				MatrixToFloats.Add(f4);
 			}

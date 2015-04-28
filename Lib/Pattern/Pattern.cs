@@ -80,8 +80,11 @@ namespace CombineDesign
 				if (Index == 0)
 					hideInitJump = true;
 
-				if (Designs.Count - (Count + Index++) > 0)
+				if (Designs.Count - (Count + Index) > 0)
+				{
+					Index++;
 					continue;
+				}
 
 				DF.SetPixelToMMRatio(ZoomLevel);
 				AllBitmaps.Add((Image)DF.ToBitmap(2.0f, hideInitJump));
@@ -127,12 +130,17 @@ namespace CombineDesign
 		}*/
 		private void ApplyAffineTransform(List<float[]> AffTrans, List<MyRect> ImageBounds)
 		{
+
+			int counter = 0;
+
 			foreach (float[] fa in AffTrans)
 			{
-				foreach (MyRect MR in ImageBounds)
+				/*foreach (MyRect MR in ImageBounds)
 				{
 					MR.Rotate(fa);
-				}
+				} */
+
+				ImageBounds[counter++].Rotate(fa);
 			}
 		}
 
@@ -154,6 +162,9 @@ namespace CombineDesign
 			int LastDesignID = 0;
 			int counter = 0;
 
+			//Apply Transform to everything
+			ApplyAffineTransform(MatrixFloats, ImagePos);	//Apply Matrix to each colorblock (and stitchblock?) to change width/height
+
 			foreach (DesignFormat DF in Designs)
 			{
 				DF.SetHoopWidth((ushort)HoopWidth);
@@ -162,16 +173,11 @@ namespace CombineDesign
 				if (DF == Designs[Designs.Count - 1])
 					LastDesignID = DF.GetID();
 
-				if (DF.GetIsSideways())
-					DF.SetSideways270Offset();
-#if !BASIC
-										
-				//Apply Transform to everything
-				ApplyAffineTransform(MatrixFloats, ImagePos);	//Apply Matrix to each colorblock (and stitchblock?) to change width/height
-
-				foreach (ColorBlock CB in DF.BlocksInDesignByColor)
-					CB.BoundsUpdated();
-#endif
+				//if (DF.GetIsSideways())
+					//DF.SetSideways270Offset();
+				//Don't think this is going to do anything
+				//foreach (ColorBlock CB in DF.BlocksInDesignByColor)
+					//CB.BoundsUpdated();
 			}
 
 			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, ZoomLevel, MatrixFloats);   
@@ -196,6 +202,7 @@ namespace CombineDesign
 
 				ColorBlock Next = Designs[Count].GetFirstColorBlock();
 				DF.SetSaveOffset(PESOffset);
+				DF.SetAffineTransform(MatrixFloats[Count]);
 
 				/*if (LastStitch != null && (LastStitch.Flags & 0x03) != 0)
 				{
@@ -206,7 +213,29 @@ namespace CombineDesign
 				CSewSegSection.Enqueue(DF.WriteNewDesignBreak(LastStitch, Next));
 				CSewSegSection.Enqueue(DF.GetSewSegSection(PESOffset, LastStitch));
 
-				EncodedPECSection.Add(DF.GetEncodedPECSection(PECOffset, LastDesignID, stopCodeForPEC, LastStitch, LastOffset, CenterPoint, AllBounds));
+				if (LastStitch != null)
+				{
+					MyRect TempRect = Designs[Count - 1].GetBoundsOfDesign();
+					TempRect.Rotate(MatrixFloats[Count - 1]);
+					
+					Point Center = TempRect.Center;
+
+					short modX = (short)(LastStitch.XX - Center.X);
+					short modY = (short)(LastStitch.YY - Center.Y);
+
+					//apply matrix to first point
+					short matrixModX = (short)((modX * MatrixFloats[Count - 1][0]) + (modY * MatrixFloats[Count - 1][2]));
+					short matrixModY = (short)((modX * MatrixFloats[Count - 1][1]) + (modY * MatrixFloats[Count - 1][3]));
+
+					//move back by Center
+					matrixModX += (short)Center.X;
+					matrixModY += (short)Center.Y;
+
+					LastStitch.XX = matrixModX;
+					LastStitch.YY = matrixModY;
+				}
+
+				EncodedPECSection.Add(DF.GetEncodedPECSection(PECOffset, LastDesignID, stopCodeForPEC, LastStitch, LastOffset, CenterPoint, AllBounds, MatrixFloats[Count]));
 
 				if (Count == Designs.Count - 1)
 					EncodedPECSection.Add(DF.GetASCII8String(1, 0xFF));
@@ -252,7 +281,7 @@ namespace CombineDesign
 
 			OffsetAmount.Clear();
 
-			EncodedBitmap += GetBitmapSection(ImagePos, HoopWidth, HoopHeight, AllBitmaps, ZoomLevel);
+			EncodedBitmap += GetBitmapSection(ImagePos, HoopWidth, HoopHeight, AllBitmaps, ZoomLevel, MatrixFloats);
 
 			CSewSegFooter += GetCSewSegFooter(Designs[Designs.Count - 1].GetLastColorIndex());
 			
@@ -451,7 +480,7 @@ namespace CombineDesign
 			return Values;
 		}
 
-		List<List<List<Point>>> GetScaledPoints(int scaledWidth, int scaledHeight, int fullWidth, int fullHeight, float zoom, List<MyRect> ImageBounds)
+		List<List<List<Point>>> GetScaledPoints(int scaledWidth, int scaledHeight, int fullWidth, int fullHeight, float zoom, List<MyRect> ImageBounds, List<float[]> matrixValues)
 		{
 			int Counter = 0;
 			List<List<List<Point>>> Values = new List<List<List<Point>>>();
@@ -461,13 +490,13 @@ namespace CombineDesign
 				foreach (DesignFormat DF in Designs)
 				{
 					Values.Add(DF.ScaleDesignByColor(scaledWidth, scaledHeight,	GetHoopWidthInMM(fullWidth), GetHoopHeightInMM(fullHeight), -1.0f, new Point(ImageBounds[Counter].Left,
-						ImageBounds[Counter].Top)));
+						ImageBounds[Counter].Top), matrixValues[Counter]));
 
 					Counter++;
 				}
 			}
 			else //use zoom
-				Values.Add(Designs[0].ScaleDesignByColor(scaledWidth, scaledHeight, GetHoopWidthInMM(fullWidth), GetHoopHeightInMM(fullHeight), zoom, new Point(0, 0)));
+				Values.Add(Designs[0].ScaleDesignByColor(scaledWidth, scaledHeight, GetHoopWidthInMM(fullWidth), GetHoopHeightInMM(fullHeight), zoom, new Point(0, 0), matrixValues[0]));
 
 			return Values;
 		}
@@ -552,7 +581,7 @@ namespace CombineDesign
 				throw new Exception("Bitmap in Frame, Rows 0x023-0x025");
 		}
 
-		String GetBitmapSection(List<MyRect> DesignPos, Int32 HoopWidth, Int32 HoopHeight, List<Image> Images, float Zoom)
+		String GetBitmapSection(List<MyRect> DesignPos, Int32 HoopWidth, Int32 HoopHeight, List<Image> Images, float Zoom, List<float[]> matrixValues)
 		{
 			byte[,] ThumbnailBytes = new byte[38, 6];
 			String EncodedSection = "";
@@ -582,7 +611,7 @@ namespace CombineDesign
 			}
 
 			ImageBounds = GetImageBounds(DesignPos, Zoom);
-			ScaledPoints = GetScaledPoints(BITMAP_WIDTH, BITMAP_HEIGHT, HoopWidth, HoopHeight, Zoom, ImageBounds);
+			ScaledPoints = GetScaledPoints(BITMAP_WIDTH, BITMAP_HEIGHT, HoopWidth, HoopHeight, Zoom, ImageBounds, matrixValues);
 
 			byte[,] BitmapBytes = new byte[38, 6];
 			bool FrameSet = false;
@@ -880,6 +909,7 @@ namespace CombineDesign
 					continue;
 
 				MyRect Test = new MyRect(DF.GetBoundsOfDesign());
+				Test.Rotate(MatrixFloats[counter]);
 				MyRect ImageLoc = new MyRect(ImageValues[counter++]);
 
 				if (DF.GetIsSideways())
@@ -1111,7 +1141,7 @@ namespace CombineDesign
 
 				if (TPoint.X < 0 && TPoint.Y > 0)
 				{
-					NewOffsetAmountY = TPoint.X - Height - ImageXOffset;
+					NewOffsetAmountY = TPoint.X - Height - ImageYOffset;
 					NewOffsetAmountX = ImageYOffset + TPoint.Y;
 				}
 				else if (TPoint.Y < 0 && TPoint.X > 0)
@@ -1221,8 +1251,7 @@ namespace CombineDesign
 			EmbOneHeader += Designs[0].GetASCII8String(2, WidthValue);
 			EmbOneHeader += Designs[0].GetASCII8String(2, HeightValue);
 			EmbOneHeader += Designs[0].GetASCII8String(8, 0);
-			EmbOneHeader += Designs[0].GetASCII8String(2, (Designs
-				[0].GetJumpCount(0) * 2) + 1);
+			EmbOneHeader += Designs[0].GetASCII8String(2, (Designs[0].GetJumpCount(0) * 2) + 1); 
 			EmbOneHeader += Designs[0].GetASCII8String(2, -1);
 			EmbOneHeader += Designs[0].GetASCII8String(2, 0);
 

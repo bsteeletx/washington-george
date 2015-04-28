@@ -1139,22 +1139,22 @@ namespace CombineDesign
 				int Width = ImageWidths.Dequeue();
 				int Height = ImageHeights.Dequeue();
 
-				if (TPoint.X < 0 && TPoint.Y > 0)
+				if (TPoint.X < 0 && TPoint.Y > 0)	  // Rotate 90
 				{
 					NewOffsetAmountY = TPoint.X - Height - ImageYOffset;
 					NewOffsetAmountX = ImageYOffset + TPoint.Y;
 				}
-				else if (TPoint.Y < 0 && TPoint.X > 0)
+				else if (TPoint.Y < 0 && TPoint.X > 0)  //Rotate 270
 				{
 					NewOffsetAmountX = TPoint.Y - Width - ImageYOffset;
 					NewOffsetAmountY = ImageXOffset + TPoint.X;
 				}
-				else if (TPoint.X < 0 || TPoint.Y < 0)
+				else if (TPoint.X < 0 || TPoint.Y < 0) //Rotate 180
 				{
 					NewOffsetAmountY = TPoint.X - Height - ImageYOffset;
 					NewOffsetAmountX = TPoint.Y - Width - ImageXOffset;
 				}
-				else
+				else //Rotate 0
 				{
 					NewOffsetAmountX = ImageXOffset + TPoint.X;
 					NewOffsetAmountY = ImageYOffset + TPoint.Y;
@@ -1205,7 +1205,9 @@ namespace CombineDesign
 		{
 			String EmbOneHeader = "";
 			MyRect FirstColorBlockBounds = Designs[0].GetFirstColorBlock().GetColorBounds();
-			FirstColorBlockBounds.Rotate(MatrixValues[0]);
+			
+			//No Rotation, as the Affine Transform takes care of that?
+			//FirstColorBlockBounds.Rotate(MatrixValues[0]);
 
 			//if (Designs[0].GetIsSideways())
 			//{
@@ -1219,15 +1221,6 @@ namespace CombineDesign
 			int WidthValue = FirstColorBlockBounds.Width;
 			int HeightValue = FirstColorBlockBounds.Height;
 			Int32 OffsetValue = 0;
-
-			//First Section not entire Design
-			/*foreach (Rectangle R in ImageBoxes)
-			{
-				LeftValue = Math.Min(R.Left, LeftValue);
-				TopValue = Math.Min(R.Top, TopValue);
-				RightValue = Math.Max(R.Right, RightValue);
-				BottomValue = Math.Max(R.Bottom, BottomValue);
-			}*/
 
 			//might only work on 7x5 :(
 			if (HoopWidth > HoopHeight)

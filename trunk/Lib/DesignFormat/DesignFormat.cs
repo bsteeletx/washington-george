@@ -90,7 +90,7 @@ namespace CombineDesign
 		protected bool IsSideways = false;
 		public int NumOfDesignsInPattern = 1;
 
-		//protected float[] AffTransAsFloats = { 0f, 0f, 0f, 0f };
+		protected float[] AffTransAsFloats = { 0f, 0f, 0f, 0f };
 
 		public DesignFormat()
 		{	
@@ -106,8 +106,7 @@ namespace CombineDesign
 		}
 
 		///////////////////OVERRIDES!!!//////////////////////////
-		public virtual String GetEncodedPECSection(Point Offset, int 
-			designCount, bool lastStopCode, Stitch LastStitch, Point LastOffset, Point TopLeftOfDesign, MyRect BoundsOfPattern)
+		public virtual String GetEncodedPECSection(Point Offset, int designCount, bool lastStopCode, Stitch LastStitch, Point LastOffset, Point TopLeftOfDesign, MyRect BoundsOfPattern, float[] matrix)
 		{
 			String Ret = "";
 			return Ret;
@@ -705,14 +704,6 @@ namespace CombineDesign
 			return Box.Height;
 		}*/
 
-		public MyRect GetBoundingBox(Int32 ForColorBlock = -1)
-		{
-			if (ForColorBlock == -1)
-				return GetBoundsOfDesign();
-			else
-				return BlocksInDesignByColor[ForColorBlock].GetColorBounds();
-		}
-
 		public Point GetSaveOffset()
 		{
 			return SaveOffset;
@@ -733,7 +724,24 @@ namespace CombineDesign
 			return Box.Width;
 		}*/
 
+		public void SetAffineTransform(float[] matrixFloats)
+		{
+			for (int i = 0; i < 4; i++)
+				 AffTransAsFloats[i] = matrixFloats[i];
+		}
+
 		public String GetAffineTransform()
+		{
+			String AffineTransform = "";
+
+			for (int i = 0; i < 4; i++)
+				AffineTransform += GetASCII8String(4, AffTransAsFloats[i]);
+
+			return AffineTransform;
+		}
+
+		//deprecated, used to be GetAffineTransform
+		public String GetStdAffineTransform()	
 		{
 			String AffineTransform = "";
 
@@ -764,11 +772,9 @@ namespace CombineDesign
 				AffineTransform += GetASCII8String(2, -16512); //0xBF80
 				/////////////////Split//////////////////////
 				AffineTransform += GetASCII8String(2, 2886); //0x0B46
-				AffineTransform += GetASCII8String(2,
-					12881); //0x3251
+				AffineTransform += GetASCII8String(2, 12881); //0x3251
 				AffineTransform += GetASCII8String(2, 0);
-				AffineTransform += GetASCII8String(2,
-					17658); //0x44FA
+				AffineTransform += GetASCII8String(2, 17658); //0x44FA
 				AffineTransform += GetASCII8String(2, 0);
 				AffineTransform += GetASCII8String(2, 0);
 			}
@@ -964,8 +970,6 @@ namespace CombineDesign
 				Bounds.Bottom = Math.Max(Bounds.Bottom, Test.Bottom);			
 			}
 
-			//Bounds.Offset(SaveOffset);
-
 			return Bounds;
 		}
 
@@ -1047,23 +1051,6 @@ namespace CombineDesign
 			return BlocksInDesignByColor[ThreadNumber].ModBlockCount - 1;
 		}
 
-		//when getting closer to working, replace this with getting the designs left bounding box property
-		public Int16 GetOriginalLeft()
-		{
-			return (short)GetBoundsOfDesign().Left;
-		}
-
-		//Same as above
-		public Int16 GetOriginalTop()
-		{
-			return (short)GetBoundsOfDesign().Top;
-		}
-
-		/*public MyRect GetColorBlockBounds(int Block)
-		{
-			return BlocksInDesignByColor[Block].GetColorBounds();
-		}*/
-
 		public ColorBlock GetFirstColorBlock()
 		{
 			return BlocksInDesignByColor[0];
@@ -1136,13 +1123,14 @@ namespace CombineDesign
 			}
 
 			ColorBreak += GetAffineTransform();
+			ColorBreak += GetASCII8String(8, 0);
 			ColorBreak += GetASCII8String(2, 1);
 
 			ColorBreak += GetASCII8String(2, NextBoundingBox.Left + SaveOffset.X);
 			ColorBreak += GetASCII8String(2, NextBoundingBox.Bottom + SaveOffset.Y);
 			ColorBreak += GetASCII8String(2, NextBoundingBox.Width);
 			ColorBreak += GetASCII8String(2, NextBoundingBox.Height);
-			
+
 			ColorBreak += GetASCII8String(8, 0);
 
 			if (FirstBlockInDesign)
@@ -1342,13 +1330,15 @@ namespace CombineDesign
 
 		}*/
 
-		public List<List<Point>> ScaleDesignByColor(int width, int height, int canvasWidth, int canvasHeight, float ZoomLevel, Point ImageLoc)
+		public List<List<Point>> ScaleDesignByColor(int width, int height, int canvasWidth, int canvasHeight, float ZoomLevel, Point ImageLoc, float[] matrix)
 		{
 			List<Point> ScaledList = new List<Point>();
 			List<List<Point>> ListOfScaledLists = new List<List<Point>>();
 			float widthToCanvas = ((float)(width) / (float)canvasWidth);
 			float heightToCanvas = ((float)(height) / (float)canvasWidth);
 			float ratio = Math.Min(widthToCanvas, heightToCanvas);
+			short minX = 99;
+			short minY = 99;
 						
 			foreach (ColorBlock CB in BlocksInDesignByColor)
 			{
@@ -1365,19 +1355,24 @@ namespace CombineDesign
 							int x = 0;
 							int y = 0;
 
-							//always use imageLoc
-							/*if (ZoomLevel != -1.0f)
-							{
-								x = (int)Math.Round((S.XX / ZoomLevel) * 
-									ratio, 0, MidpointRounding.ToEven);
-								y = (int)Math.Round((S.YY / ZoomLevel) * 
-									ratio, 0, MidpointRounding.ToEven);
-							}*/
-							//else //use imageloc
-							//{
-								x = (int)Math.Round(((S.XX + ImageLoc.X) * ratio), 0, MidpointRounding.ToEven);
-								y = (int)Math.Round(((S.YY + ImageLoc.Y) * ratio), 0, MidpointRounding.ToEven);
-							//}
+							///////////////////////////Apply Rotation/////////////////////
+							///Subtract by Center
+							MyRect TempRect = GetBoundsOfDesign();
+							TempRect.Rotate(matrix);
+							int tempX = S.XX - TempRect.Center.X;
+							int tempY = S.YY - TempRect.Center.Y;
+
+							////////////Apply Matrix/////////////
+							Point TempDelta = new Point(tempX, tempY);
+							tempX = (short)((TempDelta.X * matrix[0]) + (TempDelta.Y * matrix[2]) + TempRect.Center.X);
+							tempY = (short)((TempDelta.X * matrix[1]) + (TempDelta.Y * matrix[3]) + TempRect.Center.Y);
+							/////////////////////////////////////		
+
+							x = (int)Math.Round(((tempX + ImageLoc.X) * ratio), 0, MidpointRounding.ToEven);
+							y = (int)Math.Round(((tempY + ImageLoc.Y) * ratio), 0, MidpointRounding.ToEven);
+
+							minX = (short)Math.Min(x, minX);
+							minY = (short)Math.Min(y, minY);
 
 							ScaledList.Add(new Point(x, y));
 						}
@@ -1386,6 +1381,36 @@ namespace CombineDesign
 
 				ListOfScaledLists.Add(ScaledList);
 				ScaledList = new List<Point>();
+			}
+
+			if (minX < 0)
+			{
+				foreach (List<Point> LP in ListOfScaledLists)
+				{
+					for (int i = 0; i < LP.Count; i++)
+					{
+						Point Replacement = LP[i];
+
+						Replacement.X += Math.Abs(minX);
+
+						LP[i] = Replacement;
+					}
+				}
+			}
+
+			if (minY < 0)
+			{
+				foreach (List<Point> LP in ListOfScaledLists)
+				{
+					for (int i = 0; i < LP.Count; i++)
+					{
+						Point Replacement = LP[i];
+
+						Replacement.Y += Math.Abs(minY);
+
+						LP[i] = Replacement;
+					}
+				}
 			}
 
 			if (width > height)
@@ -1462,8 +1487,8 @@ namespace CombineDesign
 		{
 			return (degrees * (Math.PI / 180.0f));
 		}
-
-		public void RotateStitches(float degrees, Point TopLeft, int hoopWidth)
+		  /*
+		public void RotateStitches(float degrees, Point TopLeft, int hoopWidth, float[] matrix)
 		{
 			short MinX = 32767;
 			short MinY = 32767;
@@ -1477,7 +1502,7 @@ namespace CombineDesign
 			short tempY = 0;
 
 			Stitch LastStitch = null;
-			Point Center = GetBoundsOfDesign().Center;
+			Point Center = GetBoundsOfDesign(matrix).Center;
 			
 			int debugCounter = 0;
 
@@ -1609,9 +1634,9 @@ namespace CombineDesign
 
 			currentAngle = degrees;
 		}
-
+		*/
 		//currently only works in 90 degree increments
-		public void Rotate(float degrees, MyRect DesignPos, float zoom, short hoopWidth)
+		/*public void Rotate(float degrees, MyRect DesignPos, float zoom, short hoopWidth)
 		{
 			MyRect TempRect = DesignPos;
 						
@@ -1636,8 +1661,8 @@ namespace CombineDesign
 				int yDiff = CurrentBounds.Top - DesignPos.Top;
 
 				Translate(new Point(0, yDiff));
-			} */
-		}
+			} 
+		}		   */
 
 		public void Translate(Point Amount)
 		{

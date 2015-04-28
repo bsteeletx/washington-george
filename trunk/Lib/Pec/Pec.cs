@@ -461,20 +461,23 @@ namespace CombineDesign
 
 			return this;
 		}
-
-		public override String GetEncodedPECSection(Point ImageLoc, int lastDesignID, bool lastStopCode, Stitch LastStitch, Point LastImageLoc, Point TopLeft, MyRect PatternBounds)
+	  
+		public override String GetEncodedPECSection(Point ImageLoc, int lastDesignID, bool lastStopCode, Stitch LastStitch, Point LastImageLoc, Point TopLeft, MyRect PatternBounds, float[] matrix)
 		{
 			short deltaX = 0;
 			short deltaY = 0;
 			Byte stopCode = 0;
 			String Encoded = "";
-			MyRect Bounds = GetBoundingBox();
+			MyRect Bounds = GetBoundsOfDesign();
 			Boolean NewColor = false;
 			Boolean IsFirstStitch = true;
+			bool FirstDesignStitch = true;
 			Boolean IsFirstSection = true;
 			Stitch Last = new Stitch();
 			int colorBlockCount = 0;
 			bool forceTrim = false;
+
+			Bounds.Rotate(matrix);
 			
 			if (LastStitch != null)
 			{
@@ -524,19 +527,48 @@ namespace CombineDesign
 							deltaX = (short)((LS[0].XX - Last.XX));
 							deltaY = (short)((LS[0].YY - Last.YY));
 						}
-						else if (i == 0 && IsFirstSection && !IsFirstStitch && LastStitch != null)
+						else if (FirstDesignStitch || (i == 0 && IsFirstSection && !IsFirstStitch && LastStitch != null))
 						{
-							deltaX = (short)((LS[0].XX + ImageLoc.X) - (LastStitch.XX + LastImageLoc.X));
-							deltaY = (short)((LS[0].YY + ImageLoc.Y) - (LastStitch.YY + LastImageLoc.Y));
+							//move by half height and half width to rotate about center
+							Point Center = Bounds.Center;
+							short modDeltaX = (short)(LS[0].XX - Center.X);
+							short modDeltaY = (short)(LS[0].YY - Center.Y);
 
-							//for Sideways K
+						 	//apply matrix to first point
+							short matrixModDeltaX = (short)((modDeltaX * matrix[0]) + (modDeltaY * matrix[2]));
+							short matrixModDeltaY = (short)((modDeltaX * matrix[1]) + (modDeltaY * matrix[3]));
+
+							//move back by Center
+							matrixModDeltaX += (short)Center.X;
+							matrixModDeltaY += (short)Center.Y;
+
+							//get difference
+							if (!IsFirstStitch)
+							{
+								deltaX = (short)((matrixModDeltaX + ImageLoc.X) - (LastStitch.XX + LastImageLoc.X));
+								deltaY = (short)((matrixModDeltaY + ImageLoc.Y) - (LastStitch.YY + LastImageLoc.Y));
+							}
+							else
+							{
+								deltaX = matrixModDeltaX;
+								deltaY = matrixModDeltaY;
+							}
+
+								//for Sideways K
 							if (IsSideways)
 								deltaY += (short)SidewaysOffset;
 						}
 						else
 						{
-							deltaX = (short)LS[i].Delta.X;
-							deltaY = (short)LS[i].Delta.Y;
+							//if (!FirstDesignStitch)
+							//{
+								deltaX = (short)LS[i].Delta.X;
+								deltaY = (short)LS[i].Delta.Y;
+							//}
+							//else
+							//{
+
+							//}
 						}
 
 						if (GetUHoopWidth() == 7)
@@ -576,6 +608,18 @@ namespace CombineDesign
 							else if (curFlags == NORMAL)
 								curFlags = TRIM;
 						}
+
+						////////////Apply Matrix/////////////
+
+						Point TempDelta = new Point(deltaX, deltaY);
+
+						if (!FirstDesignStitch)
+						{
+							deltaX = (short)((TempDelta.X * matrix[0]) + (TempDelta.Y * matrix[2]));
+							deltaY = (short)((TempDelta.X * matrix[1]) + (TempDelta.Y * matrix[3]));
+						}
+						/////////////////////////////////////					
+						FirstDesignStitch = false;
 
 						//WRITE STITCH OUT
 						if ((deltaX < 64 && deltaX >= -64) && !IsFirstStitch && !NewColor)

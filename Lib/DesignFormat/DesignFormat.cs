@@ -2750,7 +2750,6 @@ namespace CombineDesign
 				_top += -temp;
 				_bottom += temp;
 			}
-
 			//I try to keep the top left corner in the same location after rotation
 			/*if (TopLeftCorner.X < _left)
 			{

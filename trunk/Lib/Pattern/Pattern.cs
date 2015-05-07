@@ -162,6 +162,8 @@ namespace CombineDesign
 			int LastDesignID = 0;
 			int counter = 0;
 
+			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, ZoomLevel, MatrixFloats);
+			
 			//Apply Transform to everything
 			ApplyAffineTransform(MatrixFloats, ImagePos);	//Apply Matrix to each colorblock (and stitchblock?) to change width/height
 
@@ -180,7 +182,7 @@ namespace CombineDesign
 					//CB.BoundsUpdated();
 			}
 
-			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, ZoomLevel, MatrixFloats);   
+			
 			PesHoopSizeFormat = GetPesHoopSizeFormat(HoopWidth, HoopHeight);
 
 			//for (int i = 0; i < ImagePos.Count; i++)
@@ -1085,12 +1087,16 @@ namespace CombineDesign
 			return new MyRect(left, top, right, bottom);
 		}
 
-		Point MultiplyPointByMatrix(Point P, float[] matrix)
+		Point MultiplyPointByMatrix(Point P, float[] matrix, Point Offset = new Point())
 		{
 			Point ReturnPoint = new Point();
+			Point OffsetPoint = new Point(P.X - Offset.X, P.Y - Offset.Y);
 
-			ReturnPoint.X = (int)((P.X * matrix[0]) + (P.Y * matrix[2]));
-			ReturnPoint.Y = (int)((P.X * matrix[1]) + (P.Y * matrix[3]));
+			ReturnPoint.X = (int)((OffsetPoint.X * matrix[0]) + (OffsetPoint.Y * matrix[2]));
+			ReturnPoint.Y = (int)((OffsetPoint.X * matrix[1]) + (OffsetPoint.Y * matrix[3]));
+
+			ReturnPoint.X += Offset.X;
+			ReturnPoint.Y += Offset.Y;
 
 			return ReturnPoint;
 		}
@@ -1103,66 +1109,88 @@ namespace CombineDesign
 			Queue<Int32> ImageYOffsets = new Queue<int>();
 			Queue<int> ImageWidths = new Queue<int>();
 			Queue<int> ImageHeights = new Queue<int>();
-			Queue<Point> TransformedPoint = new Queue<Point>();
+			Queue<Point> DefaultOffsets = new Queue<Point>();
 			int counter = 0;
 			
 			foreach (MyRect R in ImageBoxes)
 			{
 				//MyRect UpdatedR = RotateBounds(RotateValues[count++], R, HoopWidth);
-				ImageXOffsets.Enqueue((int)(R.Left / zoomValue));
-				ImageYOffsets.Enqueue((int)(R.Top / zoomValue));
+
+				//get the width and height first, then rotate, then get the top and left (not sure why this is needed)
 				ImageWidths.Enqueue((int)((R.Right / zoomValue) - (R.Left / zoomValue)));
 				ImageHeights.Enqueue((int)((R.Bottom / zoomValue) - (R.Top / zoomValue)));
-			
+				//R.Rotate(MatrixValues[counter++]);
+				ImageXOffsets.Enqueue((int)(R.Left / zoomValue));
+				ImageYOffsets.Enqueue((int)(R.Top / zoomValue));
+							
 				///General Offset applied to all
 				switch (HoopWidth)
 				{
 					case 4:
-						TransformedPoint.Enqueue(MultiplyPointByMatrix(new Point(0x1F4, 0x1F4), MatrixValues[counter++]));
+						DefaultOffsets.Enqueue(new Point(0x1F4, 0x1F4));
 						break;
 					case 5:
-						TransformedPoint.Enqueue(MultiplyPointByMatrix(new Point(0x15E, 0x64), MatrixValues[counter++]));
+						DefaultOffsets.Enqueue(new Point(0x15E, 0x64));
 						break;
 					case 7:
-						TransformedPoint.Enqueue(MultiplyPointByMatrix(new Point(0x64, 0x15E), MatrixValues[counter++]));
+						DefaultOffsets.Enqueue(new Point(0x64, 0x15E));
 						break;
 				}
 			}
 
+			counter = 0;
+
 			foreach (DesignFormat DF in Designs)
 			{
-				int ImageXOffset = ImageXOffsets.Dequeue();
-				int ImageYOffset = ImageYOffsets.Dequeue();
-				int NewOffsetAmountX = 0;//ImageXOffset + XOffset;
-				int NewOffsetAmountY = 0;// ImageYOffset + YOffset;
-				Point TPoint = TransformedPoint.Dequeue();
+				Point ImageOffset = new Point(ImageXOffsets.Dequeue(), ImageYOffsets.Dequeue());
+				Point DefaultOffset = DefaultOffsets.Dequeue();
 				int Width = ImageWidths.Dequeue();
 				int Height = ImageHeights.Dequeue();
+				float[] tempMatrix = MatrixValues[counter++];
+				Point[] OffsetBox = { new Point(0, 0), new Point(Width, 0), new Point(0, Height), new Point(Width, Height) };
+				Point MinPoint = new Point(3000, 3000);
+				MyRect TempImageBox = new MyRect(ImageOffset.X, ImageOffset.Y, ImageOffset.X + Width, ImageOffset.Y + Height);
+				TempImageBox.Rotate(tempMatrix);
+				Point ImageOffsetTopLeft = MultiplyPointByMatrix(new Point(TempImageBox.Top, TempImageBox.Left), tempMatrix);
+				bool reverseIdentity = false;
 
-				if (TPoint.X < 0 && TPoint.Y > 0)	  // Rotate 90
+				//check for reverse identiy, as PES handles this differently
+				if (tempMatrix[0] == -1.0f && tempMatrix[3] == -1.0f)
 				{
-					NewOffsetAmountY = TPoint.X - Height - ImageYOffset;
-					NewOffsetAmountX = ImageYOffset + TPoint.Y;
+					reverseIdentity = true;
+					tempMatrix[0] = 0.0f;
+					tempMatrix[1] = -1.0f;
+					tempMatrix[2] = -1.0f;
+					tempMatrix[3] = 0.0f;
 				}
-				else if (TPoint.Y < 0 && TPoint.X > 0)  //Rotate 270
+
+				for (int i = 0; i < 4; i++ )
 				{
-					NewOffsetAmountX = TPoint.Y - Width - ImageYOffset;
-					NewOffsetAmountY = ImageXOffset + TPoint.X;
+					OffsetBox[i] = MultiplyPointByMatrix(OffsetBox[i], tempMatrix);
 				}
-				else if (TPoint.X < 0 || TPoint.Y < 0) //Rotate 180
+
+				foreach (Point P in OffsetBox)
 				{
-					NewOffsetAmountY = TPoint.X - Height - ImageYOffset;
-					NewOffsetAmountX = TPoint.Y - Width - ImageXOffset;
+					MinPoint.X = Math.Min(MinPoint.X, P.X);
+					MinPoint.Y = Math.Min(MinPoint.Y, P.Y);
 				}
-				else //Rotate 0
-				{
-					NewOffsetAmountX = ImageXOffset + TPoint.X;
-					NewOffsetAmountY = ImageYOffset + TPoint.Y;
-				}
+
+				DefaultOffset = MultiplyPointByMatrix(DefaultOffset, tempMatrix);
+
+				Point TempOffset = new Point(MinPoint.X + DefaultOffset.X, MinPoint.Y + DefaultOffset.Y);
+				Point TotalOffset = new Point(TempOffset.Y + ImageOffsetTopLeft.Y, TempOffset.X + ImageOffsetTopLeft.X);
 				
-				Point NewOffset = new Point(NewOffsetAmountX, NewOffsetAmountY);
+				
+				OffsetAmount.Add(TotalOffset);
 
-				OffsetAmount.Add(NewOffset);
+				//fix tempMatrix (ugh!)
+				if (reverseIdentity)
+				{
+					tempMatrix[0] = -1.0f;
+					tempMatrix[1] = 0.0f;
+					tempMatrix[2] = 0.0f;
+					tempMatrix[3] = -1.0f;
+				}
 			}
 		}
 

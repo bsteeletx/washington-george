@@ -16,7 +16,7 @@ namespace CombineDesign
 
 		public Thread getThreadInList(Int16 threadID)
 		{
-			if (threadID > threadCount)
+			if (threadID >= threadCount)
 				threadID %= threadCount;
 
 			return pecThreadLibrary[threadID];

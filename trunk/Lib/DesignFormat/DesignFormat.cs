@@ -1734,9 +1734,9 @@ namespace CombineDesign
 		{
 			Bitmap DrawArea;
 			Graphics xGraph;
-			MyRect Bounds = GetBoundsOfDesign();
+			 MyRect Bounds = GetBoundsOfDesign();
 			Int32 bitmapWidth = (Int32)((Bounds.Width + (Int32)(threadThickness	* 2)) * PixelToMMRatio);
-			Int32 bitmapHeight = (Int32)((Bounds.Height + (Int32)
+			Int32 bitmapHeight = (Int32)((Bounds.Height + (int)
 				(threadThickness * 2)) * PixelToMMRatio);
 			int sidewaysYOffset = 0;
 			bool firstStitchBlock = true;

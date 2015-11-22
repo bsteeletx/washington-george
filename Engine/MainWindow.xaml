@@ -92,7 +92,7 @@
 					<RadioButton Content="  6x10" Name="radioButton6x10Hoop" Margin="5,0,0,0" GroupName="Hoop Size" IsChecked="False" Checked="radioButton6x10Hoop_Checked" IsTabStop="False" IsEnabled="False" Visibility="Collapsed"/>
 					<Separator Opacity="0" Height="10" />
 					<RadioButton Content="  10x6" Name="radioButton10x6Hoop" Margin="5,0,0,0" GroupName="Hoop Size" IsChecked="False" Checked="radioButton10x6Hoop_Checked" IsTabStop="False" IsEnabled="False" Visibility="Collapsed"/>
-					<Border BorderBrush="Black" BorderThickness="1" Height="145" Name="borderHoopSize" Width="65" Margin="0,-140,0,0" Visibility="Collapsed"/>
+					<Border BorderBrush="Black" BorderThickness="1" Height="145" Name="borderHoopSize" Width="65" Margin="0,-135,0,0" Visibility="Collapsed"/>
 					<Separator Opacity="0" Height="5" />
 					<Label Content="App Size" HorizontalAlignment="Center" Name="labelAppSize" Visibility="Collapsed"/>
 

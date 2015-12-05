@@ -1571,8 +1571,8 @@ namespace CombineDesign
 
 				foreach (Image I in Designs)
 				{
-					Rect Temp = new Rect(GetImageX(I, false, counter) / ZoomLevel, GetImageY(I, false, counter) / ZoomLevel, I.ActualWidth / ZoomLevel, I.ActualHeight / ZoomLevel);
-					
+                    Rect Temp = new Rect(GetImageX(I, false, counter) / ZoomLevel, GetImageY(I, false, counter) / ZoomLevel, I.ActualWidth / ZoomLevel, I.ActualHeight / ZoomLevel);
+                    				
 					ImageBounds.Add(Temp);
 
 					while (RotateValues[counter] < 0.0f)
@@ -1582,13 +1582,10 @@ namespace CombineDesign
 						RotateValues[counter++] %= 360.0f;
 
 					Matrices.Add(I.RenderTransform.Value);
-
-
-
 					
 				}
 
-				UserLogic.SavePattern(SFD.FileName, HoopWidth, HoopHeight, canvasDrawingArea, Designs, ZoomLevel, Matrices);//_scaleValues, RotateValues);
+				UserLogic.SavePattern(SFD.FileName, HoopWidth, HoopHeight, canvasDrawingArea, Matrices, ImageBounds);//_scaleValues, RotateValues);
 				UserLogic.UserSettings.LastSavedDir = System.IO.Path.GetDirectoryName(SFD.FileName);
 			}
 		}

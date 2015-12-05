@@ -304,7 +304,7 @@ namespace CombineDesign
 			/*if (IsSideways)
 				SavedOffset.Y += SidewaysOffset;*/
 
-			VerifyStitchValue(S, SavedOffset);
+			//VerifyStitchValue(S, SavedOffset);
 
 			StitchSection += GetASCII8String(2, S.XX + SavedOffset.X);
 			StitchSection += GetASCII8String(2, S.YY + SavedOffset.Y);
@@ -312,7 +312,7 @@ namespace CombineDesign
 			return StitchSection;
 		}
 
-		void VerifyStitchValue(Stitch S, Point Offset)
+		/*void VerifyStitchValue(Stitch S, Point Offset)
 		{
 			const String X_TOO_SMALL = "X VALUE IS TOO LOW";
 			const string X_TOO_BIG = "X VALUE IS TOO HIGH";
@@ -350,7 +350,7 @@ namespace CombineDesign
 			Point MoveOffset = new Point(0, 0);
 
 			//TODO: Uncomment this out once done testing
-			/*
+			
 			if (S.XX + Offset.X < minX)
 			{
 				//exceptionThrown = true;
@@ -375,15 +375,15 @@ namespace CombineDesign
 				MoveOffset.Y += maxY - (S.YY + Offset.Y);
 				//exceptionThrown = true;
 				error = Y_TOO_BIG;
-			} */
+			} 
 
 			if (exceptionThrown)
 				throw new Exception(error);
 
 			MoveStitchesBy(MoveOffset);
-		}
+		}*/
 
-		private void MoveStitchesBy(Point Offset)
+		/*private void MoveStitchesBy(Point Offset)
 		{
 			foreach (ColorBlock CB in BlocksInDesignByColor)
 			{
@@ -396,7 +396,7 @@ namespace CombineDesign
 					}
 				}
 			}
-		}
+		}*/
 
 		public override String GetSewSegSection(Point Offset, Stitch LastStitch	= null)
 		{

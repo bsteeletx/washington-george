@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Reflection;
 using System.IO;
 using System.Windows.Media.Imaging;
@@ -28,44 +29,24 @@ namespace CombineDesign
 			return Assembly.GetExecutingAssembly().GetName().Version.ToString();
 		}
 
-		public void SavePattern(String Filename, Int16 HoopSizeWidth, Int16 HoopSizeHeight, Canvas DrawingArea, List<System.Windows.Controls.Image> Drawings, float ZoomLevel, 
-			List<System.Windows.Media.Matrix> Matrices)//List<System.Windows.Point> ScaleInfo, List<float> RotationInfo)
+		public void SavePattern(String Filename, Int16 HoopSizeWidth, Int16 HoopSizeHeight, Canvas DrawingArea,  
+			List<System.Windows.Media.Matrix> Matrices, List<Rect> Bounds)//List<System.Windows.Point> ScaleInfo, List<float> RotationInfo)
 		{
 			List<MyRect> ImageInfo = new List<MyRect>();
-			//List<System.Drawing.Point> SDP = new List<System.Drawing.Point>();
-			List<float[]> MatrixToFloats = new List<float[]>();
-			
-			foreach (System.Windows.Controls.Image SWCI in Drawings)
-			{
-				int Left, Right, Bottom, Top;
-				
-				Left = (int)Canvas.GetLeft(SWCI);
-				Right = (int)(SWCI.ActualWidth + Canvas.GetLeft(SWCI));
-				Bottom = (int)(SWCI.ActualHeight + Canvas.GetTop(SWCI));
-				Top = (int)Canvas.GetTop(SWCI);
-
-				MyRect RectInfo = new MyRect(Left, Top, Right, Bottom);
-				ImageInfo.Add(RectInfo);
-			}
-
-			/*foreach (System.Windows.Point SWP in ScaleInfo)
-			{
-				SDP.Add(new System.Drawing.Point((int)SWP.X, (int)SWP.Y));
-			} */
+            //List<float[]> MatrixToFloats = new List<float[]>();
+            List<Matrix> DrawingMatrices = new List<Matrix>();
+            
+            foreach (Rect R in Bounds)
+            {
+                ImageInfo.Add(new MyRect((int)R.Left, (int)R.Top, (int)R.Right, (int)R.Bottom));
+            }
 
 			foreach (System.Windows.Media.Matrix M in Matrices)
-			{
-				float[] f4 = new float[4];
+            {
+                DrawingMatrices.Add(new Matrix((float)M.M11, (float)M.M12, (float)M.M21, (float)M.M22, (float)M.OffsetX, (float)M.OffsetY));
+            }
 
-				f4[0] = (float)Math.Round(M.M11, 6);
-				f4[1] = (float)Math.Round(M.M12, 6);
-				f4[2] = (float)Math.Round(M.M21, 6);
-				f4[3] = (float)Math.Round(M.M22, 6);
-
-				MatrixToFloats.Add(f4);
-			}
-
-			CurPattern.saveAsPes(Filename, HoopSizeWidth, HoopSizeHeight, ImageInfo, ZoomLevel, MatrixToFloats);//SDP, RotationInfo);
+			CurPattern.saveAsPes(Filename, HoopSizeWidth, HoopSizeHeight, ImageInfo, DrawingMatrices);//SDP, RotationInfo);
 		}
 
 		public List<System.Windows.Controls.Image> GetImagesFromDesigns(Single ZoomLevel, Int32 NewImageCount)

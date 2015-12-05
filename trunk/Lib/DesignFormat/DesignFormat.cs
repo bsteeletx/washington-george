@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Drawing;
 using CombineDesign;
+using System.Drawing.Drawing2D;
 
 namespace CombineDesign
 {
@@ -106,7 +107,7 @@ namespace CombineDesign
 		}
 
 		///////////////////OVERRIDES!!!//////////////////////////
-		public virtual String GetEncodedPECSection(Point Offset, int designCount, bool lastStopCode, Stitch LastStitch, Point LastOffset, Point TopLeftOfDesign, MyRect BoundsOfPattern, float[] matrix)
+		public virtual String GetEncodedPECSection(Point Offset, int designCount, bool lastStopCode, Stitch LastStitch, Point LastOffset, Point TopLeftOfDesign, MyRect BoundsOfPattern, Matrix RotationValues, int numOfDesigns)
 		{
 			String Ret = "";
 			return Ret;
@@ -724,10 +725,10 @@ namespace CombineDesign
 			return Box.Width;
 		}*/
 
-		public void SetAffineTransform(float[] matrixFloats)
+		public void SetAffineTransform(Matrix Transform)
 		{
-			for (int i = 0; i < 4; i++)
-				 AffTransAsFloats[i] = matrixFloats[i];
+            for (int i = 0; i < 4; i++)
+                AffTransAsFloats[i] = Transform.Elements[i];
 		}
 
 		public String GetAffineTransform()
@@ -1330,7 +1331,7 @@ namespace CombineDesign
 
 		}*/
 
-		public List<List<Point>> ScaleDesignByColor(int width, int height, int canvasWidth, int canvasHeight, float ZoomLevel, Point ImageLoc, float[] matrix)
+		public List<List<Point>> ScaleDesignByColor(int width, int height, int canvasWidth, int canvasHeight, Point ImageLoc, Matrix TransformValue)
 		{
 			List<Point> ScaledList = new List<Point>();
 			List<List<Point>> ListOfScaledLists = new List<List<Point>>();
@@ -1355,9 +1356,9 @@ namespace CombineDesign
 							int x = 0;
 							int y = 0;
 
-							///////////////////////////Apply Rotation/////////////////////
-							///Subtract by Center
-							MyRect TempRect = GetBoundsOfDesign();
+                            ///////////////////////////Apply Rotation/////////////////////
+                            ///Subtract by Center
+                            /*MyRect TempRect = GetBoundsOfDesign();
 							TempRect.Rotate(matrix);
 							int tempX = S.XX - TempRect.Center.X;
 							int tempY = S.YY - TempRect.Center.Y;
@@ -1365,11 +1366,15 @@ namespace CombineDesign
 							////////////Apply Matrix/////////////
 							Point TempDelta = new Point(tempX, tempY);
 							tempX = (short)((TempDelta.X * matrix[0]) + (TempDelta.Y * matrix[2]) + TempRect.Center.X);
-							tempY = (short)((TempDelta.X * matrix[1]) + (TempDelta.Y * matrix[3]) + TempRect.Center.Y);
+							tempY = (short)((TempDelta.X * matrix[1]) + (TempDelta.Y * matrix[3]) + TempRect.Center.Y);*/
+                            Point[] ToTransform = { new Point(S.XX, S.YY) };
+                            TransformValue.TransformPoints(ToTransform);
+                            x = ToTransform[0].X;
+                            y = ToTransform[0].Y;
 							/////////////////////////////////////		
 
-							x = (int)Math.Round(((tempX + ImageLoc.X) * ratio), 0, MidpointRounding.ToEven);
-							y = (int)Math.Round(((tempY + ImageLoc.Y) * ratio), 0, MidpointRounding.ToEven);
+							x = (int)Math.Round(((x + ImageLoc.X) * ratio), 0, MidpointRounding.ToEven);
+							y = (int)Math.Round(((y + ImageLoc.Y) * ratio), 0, MidpointRounding.ToEven);
 
 							minX = (short)Math.Min(x, minX);
 							minY = (short)Math.Min(y, minY);

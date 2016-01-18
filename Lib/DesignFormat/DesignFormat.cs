@@ -7,30 +7,30 @@ using System.Drawing.Drawing2D;
 
 namespace CombineDesign
 {
-	public class DesignFormat
-	{
-		protected System.IO.BinaryReader fileIn;
-		protected String _filename;
-		protected byte readyStatus = 0; //NotOpen, IOError, ParseError, Ready
-		protected String lastError = "";
-		//List<Byte> EntireFile = new List<byte>();
-		protected byte fileType = 0;
-		protected Int16 OriginalFirstColorLeft = 0;
-		protected Int16 OriginalFirstColorTop = 0;
-		protected float currentAngle = 0.0f;
+    public class DesignFormat
+    {
+        protected System.IO.BinaryReader fileIn;
+        protected String _filename;
+        protected byte readyStatus = 0; //NotOpen, IOError, ParseError, Ready
+        protected String lastError = "";
+        //List<Byte> EntireFile = new List<byte>();
+        protected byte fileType = 0;
+        protected Int16 OriginalFirstColorLeft = 0;
+        protected Int16 OriginalFirstColorTop = 0;
+        protected float currentAngle = 0.0f;
 
-		int _designID = 0;
-		bool _primeDesign = false;
+        int _designID = 0;
+        bool _primeDesign = false;
 
-		/* Machine codes for stitch flags */
-		public const byte NORMAL = 0; /* stitch to (xx, yy) */
-		public const byte JUMP = 1; /* move to(xx, yy) */
-		public const byte TRIM = 2; /* trim + move to(xx, yy) */
-		public const byte STOP = 4; /* pause machine for thread change */
-		public const byte SEQUIN = 8; /* sequin */
-		public const byte END = 16; /* end of program */
+        /* Machine codes for stitch flags */
+        public const byte NORMAL = 0; /* stitch to (xx, yy) */
+        public const byte JUMP = 1; /* move to(xx, yy) */
+        public const byte TRIM = 2; /* trim + move to(xx, yy) */
+        public const byte STOP = 4; /* pause machine for thread change */
+        public const byte SEQUIN = 8; /* sequin */
+        public const byte END = 16; /* end of program */
 
-		/*const Int16 LINETO = 0;
+        /*const Int16 LINETO = 0;
 		const Int16 MOVETO = 1;
 		const Int16 ARCTOMID = 2;
 		const Int16 ARCTOEND = 4;
@@ -42,14 +42,14 @@ namespace CombineDesign
 		const Int16 QUADTOCONTROL = 256;
 		const Int16 QUADTOEND = 512;*/
 
-		protected const byte PECFILESTRUCT = 1;
-		protected const byte PESFILESTRUCT = 2;
+        protected const byte PECFILESTRUCT = 1;
+        protected const byte PESFILESTRUCT = 2;
 
-		protected Single PixelToMMRatio = 1.0f;
+        protected Single PixelToMMRatio = 1.0f;
 
-		//Int16 dstJumpsPerTrim = 6;
+        //Int16 dstJumpsPerTrim = 6;
 
-		/*List<EmbArc> arcList = new List<EmbArc>();
+        /*List<EmbArc> arcList = new List<EmbArc>();
 		List<EmbCircle> circleList = new List<EmbCircle>();
 		List<EmbEllipse> ellipseList = new List<EmbEllipse>();
 		List<EmbLine> lineList = new List<EmbLine>();
@@ -59,60 +59,60 @@ namespace CombineDesign
 		List<EmbRectangle> rectangleList = new List<EmbRectangle>();
 		List<EmbSpline> splineList = new List<EmbSpline>();*/
 
-		public List<ColorBlock> BlocksInDesignByColor = new List<ColorBlock>();
-		protected ColorBlock CurColorBlock = new ColorBlock();
-		//protected List<StitchBlock> BlocksInDesign = new List<StitchBlock>();
-		protected StitchBlock CurStitchBlock = new StitchBlock();
-		protected List<Thread> ThreadsInDesign = new List<Thread>();
-		Point SaveOffset = new Point();
-				
-		Int32 minX;
-		Int32 minY;
-		Int32 maxX;
-		Int32 maxY;
-		//Int32 width = 0;
-		//Int32 height = 0;
-		//Point StartStitch = new Point(0, 0);
-		//protected bool StartStitchSet = false;
-		Int32 blockMinX = 0;
-		Int32 blockMaxX = 0;
-		Int32 blockMinY = 0;
-		Int32 blockMaxY = 0;
+        public List<ColorBlock> BlocksInDesignByColor = new List<ColorBlock>();
+        protected ColorBlock CurColorBlock = new ColorBlock();
+        //protected List<StitchBlock> BlocksInDesign = new List<StitchBlock>();
+        protected StitchBlock CurStitchBlock = new StitchBlock();
+        protected List<Thread> ThreadsInDesign = new List<Thread>();
+        Point SaveOffset = new Point();
 
-		public int SidewaysOffset = 0;
+        Int32 minX;
+        Int32 minY;
+        Int32 maxX;
+        Int32 maxY;
+        //Int32 width = 0;
+        //Int32 height = 0;
+        //Point StartStitch = new Point(0, 0);
+        //protected bool StartStitchSet = false;
+        Int32 blockMinX = 0;
+        Int32 blockMaxX = 0;
+        Int32 blockMinY = 0;
+        Int32 blockMaxY = 0;
 
-		protected Int32 currentColorIndex;
-		Int16 lastX;
-		Int16 lastY;
-		protected bool lastStitchSet = false;
-		bool ToggleValue = false;
+        public int SidewaysOffset = 0;
 
-		protected ushort uHoopWidth = 0;
-		protected bool IsSideways = false;
-		public int NumOfDesignsInPattern = 1;
+        protected Int32 currentColorIndex;
+        Int16 lastX;
+        Int16 lastY;
+        protected bool lastStitchSet = false;
+        bool ToggleValue = false;
 
-		protected float[] AffTransAsFloats = { 0f, 0f, 0f, 0f };
+        protected ushort uHoopWidth = 0;
+        protected bool IsSideways = false;
+        public int NumOfDesignsInPattern = 1;
 
-		public DesignFormat()
-		{	
-		}
+        protected float[] AffTransAsFloats = { 0f, 0f, 0f, 0f };
 
-		public DesignFormat(String Filename, int ID)
-		{
-			fileIn = new System.IO.BinaryReader(System.IO.File.Open(Filename, 
-					System.IO.FileMode.Open, System.IO.FileAccess.Read));
+        public DesignFormat()
+        {
+        }
 
-			_designID = ID;
-			_filename = Filename;
-		}
+        public DesignFormat(String Filename, int ID)
+        {
+            fileIn = new System.IO.BinaryReader(System.IO.File.Open(Filename,
+                    System.IO.FileMode.Open, System.IO.FileAccess.Read));
 
-		///////////////////OVERRIDES!!!//////////////////////////
-		public virtual String GetEncodedPECSection(Point Offset, int designCount, bool lastStopCode, Stitch LastStitch, Point LastOffset, Point TopLeftOfDesign, MyRect BoundsOfPattern, Matrix RotationValues, int numOfDesigns)
-		{
-			String Ret = "";
-			return Ret;
-		}
-		
+            _designID = ID;
+            _filename = Filename;
+        }
+
+        ///////////////////OVERRIDES!!!//////////////////////////
+        public virtual String GetEncodedPECSection(List<MyRect> Offsets, int designCount, bool lastStopCode, Stitch LastStitch, Point TopLeftOfDesign, List<Matrix> RotationValues, int numOfDesigns)
+        {
+            String Ret = "";
+            return Ret;
+        }
+
 		public virtual String GetSewSegSection(Point Offset, Stitch LastStitch = 			null)
 		{
 			String Ret = "";
@@ -1901,6 +1901,16 @@ namespace CombineDesign
 			}
 		}
 
+        public void Copy(Stitch S)
+        {
+            _delta = S.Delta;
+            _flags = S.Flags;
+            thread = S.ThreadSelection;
+            _stitchType = S.Type;
+            _location.X = S.XX;
+            _location.Y = S.YY;
+        }
+
 		public Point GetPoint()
 		{
 			Point Value = new Point(_location.X, _location.Y);
@@ -2684,7 +2694,7 @@ namespace CombineDesign
 		{
 			get 
 			{
-				return new Point((Left + Right) / 2, (Top + Bottom) / 2);
+				return new Point((Width) / 2, (Height) / 2);
 			}
 		}
 
@@ -2720,41 +2730,49 @@ namespace CombineDesign
 			Bottom = newHeight;
 		}
 
-		public void Rotate(float[] matrix)
+		public void Rotate(Matrix Values)
 		{
 			Point[] RecPoints = { new Point(_left, _top), new Point(_right, _top), new Point(_left, _bottom), new Point(_right, _bottom) };
-			Point[] RecPointsPrime = { new Point(), new Point(), new Point(), new Point() };
+			//Point[] RecPointsPrime = { new Point(), new Point(), new Point(), new Point() };
 			Point TopLeftCorner = new Point(_left, _top);
 
-			for(int i = 0; i < 4; i++)
-			{
-				RecPoints[i].X -= Center.X;
-				RecPoints[i].Y -= Center.Y;
+            for (int i = 0; i < 4; i++)
+            {
+                RecPoints[i].X -= Center.X;
+                RecPoints[i].Y -= Center.Y;
+            }
 
-				RecPointsPrime[i].X = (RecPoints[i].X * (int)matrix[0] + (RecPoints[i].Y * (int)matrix[2]));
-				RecPointsPrime[i].Y = (RecPoints[i].X * (int)matrix[1] + (RecPoints[i].Y * (int)matrix[3]));
+            Values.TransformPoints(RecPoints);
 
-				RecPointsPrime[i].X += Center.X;
-				RecPointsPrime[i].Y += Center.Y;
+			/*	RecPointsPrime[i].X = (RecPoints[i].X * (int)matrix[0] + (RecPoints[i].Y * (int)matrix[2]));
+				RecPointsPrime[i].Y = (RecPoints[i].X * (int)matrix[1] + (RecPoints[i].Y * (int)matrix[3]));*/
+
+            for (int i = 0; i < 4; i++)
+            { 
+				RecPoints[i].X += Center.X;
+				RecPoints[i].Y += Center.Y;
 			}
 
-			_left = Math.Min(RecPointsPrime[0].X, Math.Min(RecPointsPrime[1].X, Math.Min(RecPointsPrime[2].X, RecPointsPrime[3].X)));
-			_top = Math.Min(RecPointsPrime[0].Y, Math.Min(RecPointsPrime[1].Y, Math.Min(RecPointsPrime[2].Y, RecPointsPrime[3].Y)));
-			_right = Math.Max(RecPointsPrime[0].X, Math.Max(RecPointsPrime[1].X, Math.Max(RecPointsPrime[2].X, RecPointsPrime[3].X)));
-			_bottom = Math.Max(RecPointsPrime[0].Y, Math.Max(RecPointsPrime[1].Y, Math.Max(RecPointsPrime[2].Y, RecPointsPrime[3].Y)));
+			_left = Math.Min(RecPoints[0].X, Math.Min(RecPoints[1].X, Math.Min(RecPoints[2].X, RecPoints[3].X)));
+			_top = Math.Min(RecPoints[0].Y, Math.Min(RecPoints[1].Y, Math.Min(RecPoints[2].Y, RecPoints[3].Y)));
+			_right = Math.Max(RecPoints[0].X, Math.Max(RecPoints[1].X, Math.Max(RecPoints[2].X, RecPoints[3].X)));
+			_bottom = Math.Max(RecPoints[0].Y, Math.Max(RecPoints[1].Y, Math.Max(RecPoints[2].Y, RecPoints[3].Y)));
 
-			if (_left < 0)
-			{
-				int temp = _left;
-				_left += -temp;
-				_right += -temp;
-			}
-			if (_top < 0)
-			{
-				int temp = _top;
-				_top += -temp;
-				_bottom += temp;
-			}
+            /*if (!leaveNegatives)
+            {
+                if (_left < 0)
+                {
+                    int temp = _left;
+                    _left += -temp;
+                    _right += -temp;
+                }
+                if (_top < 0)
+                {
+                    int temp = _top;
+                    _top += -temp;
+                    _bottom += -temp;
+                }
+            }*/
 			//I try to keep the top left corner in the same location after rotation
 			/*if (TopLeftCorner.X < _left)
 			{
@@ -2779,7 +2797,7 @@ namespace CombineDesign
 
 			SetWidth();
 			SetHeight();
-
+            
 			/*int left = _left - Center.X;
 			int top = _top - Center.Y;
 			int bottom = _bottom - Center.Y;
@@ -2920,7 +2938,7 @@ namespace CombineDesign
 			if (_bounds != null)
 				return new MyRect(_bounds);
 			else
-				return null;
+				return new MyRect(0, 0, 0, 0);
 		}
 
 		public int[] GetMaxXStitchNumber()

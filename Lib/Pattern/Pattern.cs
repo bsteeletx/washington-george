@@ -129,19 +129,19 @@ namespace CombineDesign
 
 			return OneBitmap;
 		}*/
-		private void ApplyAffineTransform(List<float[]> AffTrans, List<MyRect> ImageBounds)
+		private void ApplyAffineTransform(List<Matrix> AffTrans, List<MyRect> ImageBounds)
 		{
 
 			int counter = 0;
 
-			foreach (float[] fa in AffTrans)
+			foreach (Matrix M in AffTrans)
 			{
 				/*foreach (MyRect MR in ImageBounds)
 				{
 					MR.Rotate(fa);
 				} */
 
-				ImageBounds[counter++].Rotate(fa);
+				ImageBounds[counter++].Rotate(M);
 			}
 		}
 
@@ -159,7 +159,7 @@ namespace CombineDesign
             String EncodedBitmap = "";
             Queue<String> CSewSegSection = new Queue<String>();
             List<String> EncodedPECSection = new List<String>();
-            int LastDesignID = 0;
+            int LastDesignID = -1;
             int counter = 0;
                         
 			GetOffsetAmount(ImagePos, HoopWidth, HoopHeight, Matrices);
@@ -184,55 +184,35 @@ namespace CombineDesign
 			bool stopCodeForPEC = true;
 			Point LastOffset = new Point();
 			Point CenterPoint = new Point();
-            MyRect AllBounds = GetAllBounds(ImagePos);//, MatrixFloats);
+            MyRect AllBounds = GetAllBounds(ImagePos, Matrices);
 			CenterPoint.X = AllBounds.Left;
 			CenterPoint.Y = AllBounds.Top;
 
 			foreach (DesignFormat DF in Designs)
 			{
-				Point PECOffset = new Point((int)(ImagePos[Count].Left), (int)(ImagePos[Count].Top));
+				//Point PECOffset = new Point((int)(ImagePos[Count].Left), (int)(ImagePos[Count].Top));
 				Point PESOffset = OffsetAmount[Count];
 
 				ColorBlock Next = Designs[Count].GetFirstColorBlock();
 				DF.SetSaveOffset(PESOffset);
 				DF.SetAffineTransform(Matrices[Count]);
 
-				/*if (LastStitch != null && (LastStitch.Flags & 0x03) != 0)
-				{
-					if ((DF.BlocksInDesignByColor[0].GetStitchBlocks()[0].GetStitchList()[0].Flags & 0x03) != 0)
-						EncodedPECSection[EncodedPECSection.Count - 1] = EncodedPECSection[EncodedPECSection.Count - 1].Substring(0, EncodedPECSection[EncodedPECSection.Count - 1].Length - 4);
-				}*/
-
 				CSewSegSection.Enqueue(DF.WriteNewDesignBreak(LastStitch, Next));
 				CSewSegSection.Enqueue(DF.GetSewSegSection(PESOffset, LastStitch));
 
 				if (LastStitch != null)
 				{
-                    /*MyRect TempRect = Designs[Count - 1].GetBoundsOfDesign();
-										
-					Point Center = TempRect.Center;
-
-					short modX = (short)((ImagePos[Count-1].Left + LastStitch.XX) - Center.X);
-					short modY = (short)((ImagePos[Count-1].Top + LastStitch.YY) - Center.Y);
-
-					//apply matrix to first point
-					short matrixModX = (short)((modX * MatrixFloats[Count - 1][0]) + (modY * MatrixFloats[Count - 1][2]));
-					short matrixModY = (short)((modX * MatrixFloats[Count - 1][1]) + (modY * MatrixFloats[Count - 1][3]));
-
-					//move back by Center
-					matrixModX += (short)Center.X;
-					matrixModY += (short)Center.Y;
-
-					LastStitch.XX = matrixModX;
-					LastStitch.YY = matrixModY;*/
-
-                    //TempRect.Rotate(MatrixFloats[Count - 1]);
-
-                    Point[] RotationPoints = { new Point(LastStitch.XX, LastStitch.YY) };
+                    MyRect TempRect = new MyRect(ImagePos[Count - 1]);
+                                        
+                    Point[] RotationPoints = { new Point(LastStitch.XX-TempRect.Center.X, LastStitch.YY-TempRect.Center.Y) };
                     Matrices[Count - 1].TransformPoints(RotationPoints);
+                    RotationPoints[0].X += TempRect.Center.X;
+                    RotationPoints[0].Y += TempRect.Center.Y;
+                    LastStitch.XX = (short)RotationPoints[0].X;
+                    LastStitch.YY = (short)RotationPoints[0].Y;
                 }
 
-				EncodedPECSection.Add(DF.GetEncodedPECSection(PECOffset, LastDesignID, stopCodeForPEC, LastStitch, LastOffset, CenterPoint, AllBounds, Matrices[Count], Designs.Count));
+				EncodedPECSection.Add(DF.GetEncodedPECSection(ImagePos, Count, stopCodeForPEC, LastStitch, CenterPoint, Matrices, Designs.Count));
 
 				if (Count == Designs.Count - 1)
 					EncodedPECSection.Add(DF.GetASCII8String(1, 0xFF));
@@ -243,9 +223,10 @@ namespace CombineDesign
 				bool lastColorFirstColorSame = false;
 
 				int LastStitchColor = Designs[Count].GetLastColorIndex();
-				LastStitch = Designs[Count++].GetLastColorBlock().GetLastStitchInColorBlock();// GetStitchBlocks()[lastRealStitchBlock - 1].GetLastStitch();
-
-				int FirstStitchColor = 0;
+                LastStitch = new Stitch();
+                LastStitch.Copy(Designs[Count++].GetLastColorBlock().GetLastStitchInColorBlock());
+                
+                int FirstStitchColor = 0;
 
 				try
 				{
@@ -258,10 +239,6 @@ namespace CombineDesign
 				
 				lastColorFirstColorSame = (LastStitchColor == FirstStitchColor);
 
-				/*byte modifier = 1;
-
-				if (Count == 1)
-					modifier = 0;*/
 				//odd change, even stay the same
 				byte change = 0;
 
@@ -272,12 +249,10 @@ namespace CombineDesign
 					if (change == 1)
 						stopCodeForPEC = !stopCodeForPEC;
 				}
-	
-				LastOffset = PECOffset;
 			}
 
 			OffsetAmount.Clear();
-
+            
 			EncodedBitmap += GetBitmapSection(ImagePos, HoopWidth, HoopHeight, AllBitmaps, Matrices);
 
 			CSewSegFooter += GetCSewSegFooter(Designs[Designs.Count - 1].GetLastColorIndex());
@@ -312,7 +287,7 @@ namespace CombineDesign
 			Int32 GraphicsOffsetLocation = PECStitchLength + 16; //16 for the				following 16 Bytes
 
             //finishing stitch section
-            EncodedPECHeader += GetPECStitchHeader(GraphicsOffsetLocation, HoopWidth, HoopHeight, ImagePos);//, Matrices);
+            EncodedPECHeader += GetPECStitchHeader(GraphicsOffsetLocation, HoopWidth, HoopHeight, ImagePos, Matrices);
 			
 			PesOutFile = PesFrame + EmbOneHeader + CSewSegHeader;
 
@@ -347,6 +322,7 @@ namespace CombineDesign
 
 			fileOut.Write(tempBytes);
 			fileOut.Close();
+            
 		}
 
 		string GetCSewSegFooter(int lastColorIndex)
@@ -360,7 +336,7 @@ namespace CombineDesign
 			return footer;
 		}
 
-		string GetPECStitchHeader(int graphicsOffset, int HoopWidth, int HoopHeight, List<MyRect> ImagePos)//, List<Matrix> Matrices)
+		string GetPECStitchHeader(int graphicsOffset, int HoopWidth, int HoopHeight, List<MyRect> ImagePos, List<Matrix> Matrices)//, List<Matrix> Matrices)
 		{
 			string header = "";
 
@@ -370,7 +346,7 @@ namespace CombineDesign
 			header += Designs[0].GetASCII8String(1, 0xFF);
 			header += Designs[0].GetASCII8String(1, 0xF0);
 
-			MyRect AllBounds = GetAllBounds(ImagePos);
+			MyRect AllBounds = GetAllBounds(ImagePos, Matrices);
 
 			if (HoopWidth <= HoopHeight)
 			{
@@ -880,47 +856,68 @@ namespace CombineDesign
 			return 0;
 		}
 
-		MyRect GetAllBounds(List<MyRect> ImagePos)//, List<float[]> MatrixFloats)
+		MyRect GetAllBounds(List<MyRect> ImagePos, List<Matrix> Matrices)
 		{
-			List<MyRect> ImageValues = new List<MyRect>();
+            int LeftValue = 999;
+            int RightValue = 0;
+            int TopValue = 999;
+            int BottomValue = 0;
+            int counter = 0;
+            List<Point> TopLefts = new List<Point>();
+            List<Point> BottomRights = new List<Point>();
 
-			foreach (MyRect MR in ImagePos)
-			{
-				MyRect Value = new MyRect(MR);
-				//Value *= (1 / ZoomLevel);
-				ImageValues.Add(Value);
-			}
-			
-			MyRect FirstBounds = new MyRect(Designs[0].GetBoundsOfDesign());
-			//FirstBounds.Rotate(MatrixFloats[0]);
-			int counter = 1;
-			Int32 LeftValue = ImageValues[0].Left + FirstBounds.Left;
-			Int32 RightValue = ImageValues[0].Left + FirstBounds.Right;
-			Int32 TopValue = ImageValues[0].Top + FirstBounds.Top;
-			Int32 BottomValue = ImageValues[0].Top + FirstBounds.Bottom;
+            foreach (MyRect MR in ImagePos)
+            {
+                TopLefts.Add(new Point(MR.Left, MR.Top));
+                BottomRights.Add(new Point(MR.Right, MR.Bottom));
+            }
+            //List<MyRect> TempImagePos = new List<MyRect>();
 
+            //don't like messing with the original values, so I'm copying the values over to a new MyRect, then modifing THAT MyRect
+            //simply find the min x's and y's and max x's and y's
+            foreach (MyRect MR in ImagePos)
+            {
+                MyRect TempRect = new MyRect(MR);
+                
+                //apply matrix first
+                TempRect.Rotate(Matrices[counter++]);
+                LeftValue = Math.Min(TempRect.Left, LeftValue);
+                RightValue = Math.Max(TempRect.Right, RightValue);
+                TopValue = Math.Min(TempRect.Top, TopValue);
+                BottomValue = Math.Max(TempRect.Bottom, BottomValue);
+            }
 
-			foreach (DesignFormat DF in Designs)
-			{
-				if (DF == Designs[0])
-					continue;
-
-				MyRect Test = new MyRect(DF.GetBoundsOfDesign());
-				//Test.Rotate(MatrixFloats[counter]);
-				MyRect ImageLoc = new MyRect(ImageValues[counter++]);
-
-				if (DF.GetIsSideways())
-				{
-					Test.Top += Math.Abs(DF.SidewaysOffset);
-					Test.Bottom += Math.Abs(DF.SidewaysOffset);
-				}
-
-				LeftValue = Math.Min(LeftValue, Test.Left + ImageLoc.Left);
-				RightValue = Math.Max(RightValue, Test.Right + ImageLoc.Left);
-				TopValue = Math.Min(TopValue, Test.Top + ImageLoc.Top);
-				BottomValue = Math.Max(BottomValue, Test.Bottom + ImageLoc.Top);
-
-			}
+            /*foreach (Point P in TopLefts)
+            {
+                if (P.X < LeftValue)
+                {
+                    //get the difference
+                    int diff = LeftValue - P.X;
+                    LeftValue = P.X;
+                    //RightValue -= diff;
+                }
+                if (P.Y < TopValue)
+                {
+                    int diff = TopValue - P.Y;
+                    TopValue = P.Y;
+                    //BottomValue -= diff;
+                }
+            }
+            foreach (Point P in BottomRights)
+            {
+                if (P.X > RightValue)
+                {
+                    int diff = P.X - RightValue;
+                    RightValue = P.X;
+                    //LeftValue -= diff;
+                }
+                if (P.Y > BottomValue)
+                {
+                    int diff = P.Y - BottomValue;
+                    BottomValue = P.Y;
+                    //TopValue -= diff;
+                }
+            }*/
 
 			return new MyRect(LeftValue, TopValue, RightValue, BottomValue);
 		}
@@ -1135,12 +1132,6 @@ namespace CombineDesign
                 Matrix ThisMatrix = new Matrix(MatrixValues[counter].Elements[0], MatrixValues[counter].Elements[1], MatrixValues[counter].Elements[2], MatrixValues[counter].Elements[3], 0, 0);
                 bool inverted = false;
 
-				/*if (ThisMatrix.Elements[0] == -1.0f && ThisMatrix.Elements[3] == -1.0f)
-				{
-					ThisMatrix = new Matrix(0, -1, -1, 0, 0, 0);
-                    inverted = true;
-				}*/
-
                 Point[] RegularTransform = { OffsetBox[0], OffsetBox[1], OffsetBox[2], OffsetBox[3] };
                 ThisMatrix.TransformPoints(RegularTransform);
                 Point[] InvertTransform = { DefaultOffset, ImageOffset };
@@ -1151,16 +1142,6 @@ namespace CombineDesign
 
                 Inverted.TransformPoints(InvertTransform);
                 
-                //Translate each Point (except DefaultOffset)
-                //Matrix TranslateMatrix = new Matrix(1, 0, 0, 1, 0, 0);// -WidthHeight.X / 2, -WidthHeight.Y / 2);
-                //TranslateMatrix.TransformPoints(ToBeTransformed);
-
-                //Rotate don't need to translate back, apparently --Translate back
-                //Matrix TempMatrix = new Matrix(MatrixValues[counter].Elements[0], MatrixValues[counter].Elements[1], MatrixValues[counter].Elements[2], MatrixValues[counter].Elements[3], WidthHeight.X/2, WidthHeight.Y/2);
-                //TempMatrix.TransformPoints(ToBeTransformed);
-                //Point[] TransformedDefault = { DefaultOffset };
-                //MatrixValues[counter].TransformPoints(ToBeTransformed);
-
                 //Find new TopLeft, need to rotate Offsetbox before this
                 for (int i = 0; i < 4; i++)
                 {

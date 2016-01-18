@@ -213,6 +213,7 @@ namespace CombineDesign
 				I.SnapsToDevicePixels = false;
 				I.Focusable = true;
 				I.GotFocus += new RoutedEventHandler(I_GotFocus);
+                Canvas.SetZIndex(I, -10);
 												
 				Designs.Add(I);
 
@@ -835,15 +836,9 @@ namespace CombineDesign
 			else
 			{
 				_SetBorderPosition(_ImageBorder, Location);
-				_ImageBorder.Width = NewSize.Width;
-				_ImageBorder.Height = NewSize.Height;
+				//_ImageBorder.Width = NewSize.Width;
+				//_ImageBorder.Height = NewSize.Height;
 			}
-		}
-
-		private void windowCombineDesign_LayoutUpdated(object sender, EventArgs e)
-		{
-			//SetNewImageBorder();
-			//windowCombineDesign.LayoutUpdated -= windowCombineDesign_LayoutUpdated;
 		}
 
 		void I_MouseDown(Object Sender, MouseButtonEventArgs e)
@@ -864,9 +859,12 @@ namespace CombineDesign
 				int designID = Designs.IndexOf((Image)Sender);
 
 				Rect Bounds = GetImageBounds(TempImage, true, designID);
-				
-				if (_ImageBorder == null)
-					_ImageBorder = new Border();
+
+                if (_ImageBorder == null)
+                {
+                    _ImageBorder = new Border();
+                    Canvas.SetZIndex(_ImageBorder, -100);
+                }
 
 				if (_ctrlDown)
 					Selected.Add((Image)Sender);
@@ -1462,7 +1460,9 @@ namespace CombineDesign
 
 		private bool testTransform(Image I, int ID)
 		{
-			TransformGroup TG = new TransformGroup();
+            //TEST TO SEE IF THIS IS BETTER LONG TERM
+            /*
+            TransformGroup TG = new TransformGroup();
 			RotateTransform RT = new RotateTransform();
 			ScaleTransform ST = new ScaleTransform();
 			Image testImage = I;
@@ -1482,6 +1482,7 @@ namespace CombineDesign
 
 			Rect NewBounds = GetImageBounds(testImage, true, ID);
 
+            
 			if (NewBounds.Left < 0.0)
 				return false;
 			if (NewBounds.Top < 0.0)
@@ -1489,7 +1490,7 @@ namespace CombineDesign
 			if (NewBounds.Right > canvasDrawingArea.ActualWidth)
 				return false;
 			if (NewBounds.Bottom > canvasDrawingArea.ActualHeight)
-				return false;
+				return false;*/
 
 			return true;
 			
@@ -1534,8 +1535,8 @@ namespace CombineDesign
 			Int16 HoopWidth = 0;
 			Int16 HoopHeight = 0;
 			List<Rect> ImageBounds = new List<Rect>();
-			
-			SFD.DefaultExt = ".pes";
+
+            SFD.DefaultExt = ".pes";
 			SFD.Filter = "Pes Embroidery Files (*.pes)|*.pes";
 			
 			Nullable<Boolean> Result = SFD.ShowDialog();
@@ -1572,8 +1573,24 @@ namespace CombineDesign
 				foreach (Image I in Designs)
 				{
                     Rect Temp = new Rect(GetImageX(I, false, counter) / ZoomLevel, GetImageY(I, false, counter) / ZoomLevel, I.ActualWidth / ZoomLevel, I.ActualHeight / ZoomLevel);
-                    				
-					ImageBounds.Add(Temp);
+                    bool error = false;
+
+                    if (Temp.Left < 0.0)
+                        error = true;
+                    if (Temp.Top < 0.0)
+                        error = true;
+                    if (Temp.Right > canvasDrawingArea.ActualWidth / ZoomLevel)
+                        error = true;
+                    if (Temp.Bottom > canvasDrawingArea.ActualHeight / ZoomLevel)
+                        error = true;
+
+                    if (error)
+                    {
+                        ShowError("Design is outside of hoop, aborting save...");
+                        return;
+                    }
+
+                    ImageBounds.Add(Temp);
 
 					while (RotateValues[counter] < 0.0f)
 						RotateValues[counter] += 360.0f;
@@ -2149,9 +2166,9 @@ namespace CombineDesign
 
 		void ApplyTransform(Image I, int imageID)
 		{
-			Point Offset = new Point();
+			//Point Offset = new Point();
 
-			if(!testTransform(I, imageID))
+			/*if(!testTransform(I, imageID))
 			{
 				//double x = getTransformOffsetX(I, imageID);
 				//double y = getTransformOffsetY(I, imageID);
@@ -2164,7 +2181,7 @@ namespace CombineDesign
 				//get y offset
 				//apply x offset
 				//apply y offset
-			}
+			}*/
 
 			TransformGroup TG = new TransformGroup();
 			RotateTransform RT = new RotateTransform();
@@ -2172,8 +2189,8 @@ namespace CombineDesign
 			
 			I.RenderTransformOrigin = new Point(0.5, 0.5);
 
-			if (GetBorder() != null)
-				GetBorder().RenderTransformOrigin = new Point(0.5, 0.5);
+            /*if (GetBorder() != null)
+				GetBorder().RenderTransformOrigin = new Point(0.5, 0.5);*/
 
 			RT.Angle = RotateValues[imageID];
 			ST.ScaleX = _scaleValues[imageID].X;
@@ -2185,17 +2202,19 @@ namespace CombineDesign
 			TG.Children.Add(ST);
 
 			I.RenderTransform = TG;
+            GetBorder().RenderTransform = TG;
 
 			//checkEdges(I, true, imageID);
 
 			//if (_ImageBorder.RenderTransform != TG)
 			//{
 			Rect Bounds = GetImageBounds(I, false, imageID);
-			Point BoundsPlusOffset = new Point(Bounds.TopLeft.X + Offset.X, Bounds.TopLeft.Y + Offset.Y);
+            //Point BoundsPlusOffset = new Point(Bounds.TopLeft.X + Offset.X, Bounds.TopLeft.Y + Offset.Y);
 
-			_SetBorderPosition(_ImageBorder, BoundsPlusOffset);
-			_ImageBorder.Width = Bounds.Width;
-			_ImageBorder.Height = Bounds.Height;
+            //_SetBorderPosition(_ImageBorder, Bounds.TopLeft);
+            //_ImageBorder.Width = Bounds.Width;
+            //_ImageBorder.Height = Bounds.Height;
+            GetBorder().Visibility = Visibility.Hidden;
 			//}
 		}
 

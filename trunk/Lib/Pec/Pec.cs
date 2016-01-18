@@ -467,7 +467,7 @@ namespace CombineDesign
 			return this;
 		}
 	  
-		public override String GetEncodedPECSection(Point ImageLoc, int lastDesignID, bool lastStopCode, Stitch LastStitch, Point LastImageLoc, Point TopLeft, MyRect PatternBounds, Matrix RotationValues, int numOfDesigns)
+		public override String GetEncodedPECSection(List<MyRect> ImageLocs, int DesignCounter, bool lastStopCode, Stitch LastStitch, Point TopLeft, List<Matrix> RotationValues, int numOfDesigns)
 		{
 			short deltaX = 0;
 			short deltaY = 0;
@@ -534,41 +534,67 @@ namespace CombineDesign
 						{
 
                             //move by half height and half width to rotate about center
-                            /*Point Center = Bounds.Center;
-							short modDeltaX = (short)(ImageLoc.X + LS[0].XX - Center.X);
-							short modDeltaY = (short)(ImageLoc.Y + LS[0].YY - Center.Y);
+                            //Point Center = Bounds.Center;
+                            /*Point LastStitchPoint = new Point();
+                            try
+                            {
+                                LastStitchPoint = new Point(LastStitch.XX, LastStitch.YY);
+                            }
+                            catch
+                            {
+                                LastStitchPoint = new Point();
+                            }
+                            Point[] LastRotation = { LastStitchPoint };
 
-						 	//apply matrix to first point
-							short matrixModDeltaX = (short)((modDeltaX * matrix[0]) + (modDeltaY * matrix[2]));
-							short matrixModDeltaY = (short)((modDeltaX * matrix[1]) + (modDeltaY * matrix[3]));
+                            if (LastStitch != null)
+                            {
+                                RotationValues[DesignCounter - 1].TransformPoints(LastRotation);
+                                LastRotation[0].X += (short)((ImageLocs[DesignCounter - 1].Height + (ImageLocs[DesignCounter - 1].Height * RotationValues[DesignCounter - 1].Elements[1])) / 2);
+                                LastRotation[0].Y += (short)((ImageLocs[DesignCounter - 1].Width + (ImageLocs[DesignCounter - 1].Width * RotationValues[DesignCounter - 1].Elements[2])) / 2);
+                            }*/
 
-							//move back by Center
-							matrixModDeltaX += (short)Center.X;
-							matrixModDeltaY += (short)Center.Y;*/
+                            //Rotate Current Point--we know where we want to put it, so we do not need to do the subtract by Center, add by Center thing
+                            MyRect ThisImageBox = new MyRect(ImageLocs[DesignCounter]);
+                            Point[] ThisPoint = { new Point(LS[0].Delta.X, LS[0].Delta.Y)};
 
-                            //Point[] TransformPoints = { new Point(ImageLoc.X + LS[0].XX, ImageLoc.Y + LS[0].YY) };
-                            Point Center = new Point(PatternBounds.Width / 2, PatternBounds.Height / 2);
-                            Point[] TransformPoints = { new Point(LS[0].XX - Center.X, LS[0].YY - Center.Y) };
-                            RotationValues.TransformPoints(TransformPoints);
-                            TransformPoints[0].X += PatternBounds.Width / 2;
-                            TransformPoints[0].Y += PatternBounds.Height / 2;
+                            if (!RotationValues[DesignCounter].IsIdentity)
+                            {
+                                ThisPoint[0].X -= ThisImageBox.Center.X;
+                                ThisPoint[0].Y -= ThisImageBox.Center.Y;
 
-							//get difference
-							if (!IsFirstStitch)
+                                RotationValues[DesignCounter].TransformPoints(ThisPoint);
+
+                                ThisPoint[0].X += ThisImageBox.Center.X;
+                                ThisPoint[0].Y += ThisImageBox.Center.Y;
+                            }
+                            else
+                            {
+                                ThisPoint[0].X += ThisImageBox.Left;
+                                ThisPoint[0].Y += ThisImageBox.Top;
+                            }
+
+							if(!IsFirstStitch)
 							{
-								deltaX = (short)((TransformPoints[0].X + ImageLoc.X) - (LastStitch.XX + LastImageLoc.X)); //used to be matrixModDeltaX
-								deltaY = (short)((TransformPoints[0].Y + ImageLoc.Y) - (LastStitch.YY + LastImageLoc.Y));
+                                MyRect LastImageBox = new MyRect();
+                                LastImageBox = new MyRect(ImageLocs[DesignCounter - 1]);
+                                //Point[] InversePoint = { new Point(LastImageBox.Left, LastImageBox.Top) };
+                                //Matrix InversedMatrix = new Matrix(RotationValues[DesignCounter - 1].Elements[0], RotationValues[DesignCounter - 1].Elements[2], RotationValues[DesignCounter - 1].Elements[1], RotationValues[DesignCounter - 1].Elements[3], 0, 0);
+
+                                LastImageBox.Rotate(RotationValues[DesignCounter - 1]);
+                                
+                                //deltaX = (short)((ThisPoint[0].X + ImageLocs[DesignCounter].Left) - (LastStitch.XX + ImageLocs[DesignCounter-1].Left)); //used to add last image loc to this as well, but I already did that above
+                                //deltaY = (short)((ThisPoint[0].Y + ImageLocs[DesignCounter].Top) - (LastStitch.YY + ImageLocs[DesignCounter-1].Top));
+                                deltaX = (short)(ThisPoint[0].X - (LastStitch.XX + LastImageBox.Top));
+                                deltaY = (short)(ThisPoint[0].Y - (LastStitch.YY + LastImageBox.Left));
 							}
 							else
 							{
-                                deltaX = (short)TransformPoints[0].X;
-                                deltaY = (short)TransformPoints[0].Y;
-								//deltaX = matrixModDeltaX; 
-								//deltaY = matrixModDeltaY;
+                                //deltaX = (short)(ThisPoint[0].X + (Bounds.Height + (Bounds.Height * RotationValues[DesignCounter].Elements[1])) / 2);
+                                //deltaY = (short)(ThisPoint[0].Y + (Bounds.Width + (Bounds.Width * RotationValues[DesignCounter].Elements[2])) / 2);
+                                deltaX = (short)ThisPoint[0].X;
+                                deltaY = (short)ThisPoint[0].Y;
 							}
 
-                            //rotate has occurred, not sure if this is needed, but will leave it in for now--was moved from top of function
-                            //Bounds.Rotate(matrix);
                             //for Sideways K
                             if (IsSideways)
 								deltaY += (short)SidewaysOffset;
@@ -593,17 +619,17 @@ namespace CombineDesign
 							deltaY = temp;
 						}
 
-						if (IsFirstStitch && (numOfDesigns != 1 || !RotationValues.IsIdentity))
+						if (IsFirstStitch && (numOfDesigns != 1 || !RotationValues[DesignCounter].IsIdentity))
 						{
 							if (GetUHoopWidth() == 7)
 							{
-								deltaX += (short)((PatternBounds.Height) + (TopLeft.Y - ImageLoc.Y));
-								deltaY += (short)(ImageLoc.X - TopLeft.X);
+								//deltaX += (short)((PatternBounds.Height) + (TopLeft.Y - ImageLoc.Y));
+								deltaY += (short)(ImageLocs[DesignCounter].Left - TopLeft.X);
 							}
 							else
 							{
-								deltaX += (short)(ImageLoc.X - TopLeft.X);
-								deltaY += (short)(ImageLoc.Y - TopLeft.Y);
+								deltaX += (short)(ImageLocs[DesignCounter].Left - TopLeft.X);
+								deltaY += (short)(ImageLocs[DesignCounter].Top - TopLeft.Y);
 							}
 						}
 
@@ -632,7 +658,7 @@ namespace CombineDesign
 						{
                             //deltaX = (short)((TempDelta.X * matrix[0]) + (TempDelta.Y * matrix[2]));
                             //deltaY = (short)((TempDelta.X * matrix[1]) + (TempDelta.Y * matrix[3]));
-                            RotationValues.TransformPoints(TempDelta);
+                            RotationValues[DesignCounter].TransformPoints(TempDelta);
                             deltaX = (short)TempDelta[0].X;
                             deltaY = (short)TempDelta[0].Y;
 						}
